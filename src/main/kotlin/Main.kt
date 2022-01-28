@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.MenuBar
@@ -32,11 +33,13 @@ import androidx.compose.ui.window.application
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.ocpsoft.prettytime.PrettyTime
 import java.awt.Desktop
 import java.net.URI
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.ZoneId
+import java.util.*
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
@@ -221,6 +224,14 @@ fun FrameWindowScope.App() {
                     shortcut = KeyShortcut(Key.RightBracket, meta = true)
                 )
             }
+
+            Menu("Settings") {
+                CheckboxItem(
+                    "Show Icon",
+                    onCheckedChange = { showIcon = it },
+                    checked = showIcon
+                )
+            }
         }
 
         Scaffold(
@@ -380,11 +391,14 @@ fun FrameWindowScope.App() {
     }
 }
 
+private val timePrinter = PrettyTime()
+
 // take timestamp and return a formatted string
 fun formatTimestamp(timestamp: String): String {
     //2022-01-27T13:11:53Z
     val format = SimpleDateFormat("MMM dd, yyyy hh:mm a")
-    return format.format(Instant.parse(timestamp).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli())
+    val date = Instant.parse(timestamp).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    return timePrinter.format(Date(date)) + " on " + format.format(date)
 }
 
 @ExperimentalFoundationApi
@@ -423,7 +437,7 @@ fun TopicItem(item: GitHubTopic, isSelected: Boolean, topicList: List<String> = 
             ListItem(
                 text = { Text(item.name) },
                 secondaryText = { Text(item.description) },
-                icon = item.avatarUrl?.let {
+                icon = if (showIcon) item.avatarUrl?.let {
                     {
                         Surface(shape = CircleShape) {
                             AsyncImage(
@@ -434,8 +448,14 @@ fun TopicItem(item: GitHubTopic, isSelected: Boolean, topicList: List<String> = 
                             )
                         }
                     }
-                },
-                overlineText = { Text(item.url) }
+                } else null,
+                overlineText = {
+                    Text(
+                        item.url,
+                        textDecoration = TextDecoration.Underline,
+                        color = MaterialBlue
+                    )
+                }
             )
 
             FlowRow(modifier = Modifier.padding(4.dp)) {
@@ -458,13 +478,15 @@ fun TopicItem(item: GitHubTopic, isSelected: Boolean, topicList: List<String> = 
             }
 
             Text(
-                text = "Updated at ${formatTimestamp(item.pushedAt)}",
+                text = "Updated ${formatTimestamp(item.pushedAt)}",
                 style = MaterialTheme.typography.caption,
                 modifier = Modifier.padding(4.dp)
             )
         }
     }
 }
+
+var showIcon by mutableStateOf(false)
 
 fun main() = application {
     Window(onCloseRequest = ::exitApplication, title = "GitHub Topics") {

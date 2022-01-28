@@ -20,6 +20,7 @@ dependencies {
     implementation(compose.desktop.currentOs)
     implementation("com.github.tsohr:json:0.0.2")
     implementation("com.mikepenz:multiplatform-markdown-renderer-jvm:0.4.0")
+    implementation("org.ocpsoft.prettytime:prettytime:4.0.4.Final")
 }
 
 tasks.withType<KotlinCompile>() {
