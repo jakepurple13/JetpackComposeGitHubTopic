@@ -142,7 +142,7 @@ fun FrameWindowScope.App() {
                             scope.launch { topicState.animateScrollToItem(--topicSelected) }
                         }
                     },
-                    shortcut = KeyShortcut(Key.PageUp, meta = true)
+                    shortcut = KeyShortcut(Key.Minus, meta = true)
                 )
                 Item(
                     "Next",
@@ -151,7 +151,7 @@ fun FrameWindowScope.App() {
                             scope.launch { topicState.animateScrollToItem(++topicSelected) }
                         }
                     },
-                    shortcut = KeyShortcut(Key.PageDown, meta = true)
+                    shortcut = KeyShortcut(Key.Plus, meta = true)
                 )
                 Separator()
                 Item(
@@ -173,7 +173,7 @@ fun FrameWindowScope.App() {
                             scope.launch { state.animateScrollToItem(--repoSelected) }
                         }
                     },
-                    shortcut = KeyShortcut(Key.Minus, meta = true)
+                    shortcut = KeyShortcut(Key.PageUp, meta = true)
                 )
                 Item(
                     "Next",
@@ -182,7 +182,7 @@ fun FrameWindowScope.App() {
                             scope.launch { state.animateScrollToItem(++repoSelected) }
                         }
                     },
-                    shortcut = KeyShortcut(Key.Plus, meta = true)
+                    shortcut = KeyShortcut(Key.PageDown, meta = true)
                 )
                 Separator()
                 Item(
