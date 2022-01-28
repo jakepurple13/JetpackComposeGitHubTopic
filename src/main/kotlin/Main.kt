@@ -88,7 +88,7 @@ fun FrameWindowScope.App() {
                                 page = page
                             )
                         }
-                        state.scrollToItem(1)
+                        state.scrollToItem(0)
                     }
                 }
             } else {
@@ -108,7 +108,7 @@ fun FrameWindowScope.App() {
                             page = ++page
                         )
                     }
-                    state.scrollToItem(1)
+                    state.scrollToItem(0)
                 }
             } else {
                 isAskingToClose = true
@@ -128,7 +128,7 @@ fun FrameWindowScope.App() {
                             page = 1
                         )
                     }
-                    state.scrollToItem(1)
+                    state.scrollToItem(0)
                 } else {
                     isAskingToClose = true
                 }
@@ -493,5 +493,3 @@ fun main() = application {
         App()
     }
 }
-
-

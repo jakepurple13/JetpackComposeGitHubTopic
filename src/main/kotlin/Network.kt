@@ -103,15 +103,3 @@ fun getTopics2(searching: () -> Unit, done: () -> Unit, page: Int, vararg topics
     done()
     return items
 }
-
-
-// get github api topics page by page
-// map them to a list of GitHubTopic
-// and sort them by updated time
-// and return the list
-fun getTopics3(page: Int, vararg topics: String): List<GitHubTopic> {
-    TODO()
-}
-
-
-
