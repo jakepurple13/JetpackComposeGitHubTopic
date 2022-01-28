@@ -142,7 +142,7 @@ fun FrameWindowScope.App() {
                             scope.launch { topicState.animateScrollToItem(--topicSelected) }
                         }
                     },
-                    shortcut = KeyShortcut(Key.Minus, meta = true)
+                    shortcut = KeyShortcut(Key.PageUp, meta = true, shift = true)
                 )
                 Item(
                     "Next",
@@ -151,7 +151,7 @@ fun FrameWindowScope.App() {
                             scope.launch { topicState.animateScrollToItem(++topicSelected) }
                         }
                     },
-                    shortcut = KeyShortcut(Key.Plus, meta = true)
+                    shortcut = KeyShortcut(Key.PageDown, meta = true, shift = true)
                 )
                 Separator()
                 Item(
@@ -160,7 +160,7 @@ fun FrameWindowScope.App() {
                         if (topicsToSearch.isNotEmpty() && topicSelected in 0..topicsToSearch.lastIndex)
                             topicsToSearch.removeAt(topicSelected)
                     },
-                    shortcut = KeyShortcut(Key.Delete, meta = true)
+                    shortcut = KeyShortcut(Key.Delete, meta = true, shift = true)
                 )
             }
 
@@ -187,6 +187,7 @@ fun FrameWindowScope.App() {
                 Separator()
                 Item(
                     "Open",
+                    enabled = topicList.isNotEmpty() && repoSelected in 0..topicList.lastIndex,
                     onClick = {
                         if (topicList.isNotEmpty() && repoSelected in 0..topicList.lastIndex) {
                             topicList.getOrNull(repoSelected)?.let {
@@ -197,7 +198,7 @@ fun FrameWindowScope.App() {
                             }
                         }
                     },
-                    shortcut = KeyShortcut(Key.Multiply, meta = true)
+                    shortcut = KeyShortcut(Key.O, meta = true)
                 )
             }
 
@@ -241,10 +242,7 @@ fun FrameWindowScope.App() {
                 )
             },
             bottomBar = {
-                Row(
-                    modifier = Modifier.background(MaterialTheme.colors.primarySurface),
-                    horizontalArrangement = Arrangement.Center,
-                ) {
+                CustomBottomAppBar {
                     OutlinedTextField(
                         value = text,
                         onValueChange = { text = it },
@@ -280,7 +278,7 @@ fun FrameWindowScope.App() {
                             }
                         ),
                         modifier = Modifier
-                            .padding(4.dp)
+                            //.padding(4.dp)
                             .fillMaxWidth()
                             .onPreviewKeyEvent {
                                 when {
@@ -303,7 +301,7 @@ fun FrameWindowScope.App() {
                     .padding(horizontal = 4.dp)
                     .padding(it)
             ) {
-                Box(modifier = Modifier.weight(4f)) {
+                Box(modifier = Modifier.weight(5f)) {
 
                     if (showSearching) {
                         CircularProgressIndicator(
