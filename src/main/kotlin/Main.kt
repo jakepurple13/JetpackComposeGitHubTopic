@@ -5,7 +5,6 @@ import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -22,7 +21,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.BitmapPainter
-import androidx.compose.ui.input.key.*
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyShortcut
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -115,17 +117,17 @@ fun FrameWindowScope.App() {
             }
         }
 
-        fun search() {
+        fun search(pageToSearch: Int = 1) {
             scope.launch {
                 if (topicsToSearch.isNotEmpty()) {
-                    page = 1
+                    page = pageToSearch
                     repoSelected = -1
                     withContext(Dispatchers.IO) {
                         topicList = getTopics2(
                             searching = { showSearching = true },
                             done = { showSearching = false },
                             topics = topicsToSearch.toTypedArray(),
-                            page = 1
+                            page = pageToSearch
                         )
                     }
                     state.scrollToItem(0)
@@ -209,8 +211,13 @@ fun FrameWindowScope.App() {
             Menu("Search", 'S') {
                 Item(
                     "Search",
-                    onClick = { search() },
+                    onClick = { search(1) },
                     shortcut = KeyShortcut(Key.S, meta = true)
+                )
+                Item(
+                    "Refresh",
+                    onClick = { search(page) },
+                    shortcut = KeyShortcut(Key.R, meta = true)
                 )
                 Separator()
                 Item(
@@ -239,6 +246,11 @@ fun FrameWindowScope.App() {
                 TopAppBar(
                     title = { Text("Topics") },
                     actions = {
+
+                        CustomTooltip(
+                            tooltip = { Box(Modifier.padding(10.dp)) { Text("Refresh (Cmd+R)") } },
+                        ) { IconButton(onClick = { search(page) }) { Icon(Icons.Default.Refresh, null) } }
+
                         Text("Page: $page")
 
                         CustomTooltip(
@@ -278,7 +290,7 @@ fun FrameWindowScope.App() {
                                 CustomTooltip(
                                     tooltip = { Box(Modifier.padding(10.dp)) { Text("Search (Cmd+S)") } },
                                     backgroundColor = MaterialTheme.colors.primarySurface,
-                                ) { IconButton(onClick = { search() }) { Icon(Icons.Default.Search, null) } }
+                                ) { IconButton(onClick = { search(1) }) { Icon(Icons.Default.Search, null) } }
                             }
                         },
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
