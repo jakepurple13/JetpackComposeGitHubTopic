@@ -50,16 +50,22 @@ fun FrameWindowScope.App() {
 
     val scope = rememberCoroutineScope()
 
+    val historyTopicList = remember { mutableStateListOf<GitHubTopic>() }
+
     var topicList by remember { mutableStateOf<List<GitHubTopic>>(emptyList()) }
     val topicsToSearch = remember { mutableStateListOf<String>() }
     var text by remember { mutableStateOf("") }
     val state = rememberLazyListState()
     val topicState = rememberLazyListState()
+    val historyState = rememberLazyListState()
 
     var page by remember { mutableStateOf(1) }
 
+    val scaffoldState = rememberScaffoldState()
+
     var topicSelected by remember { mutableStateOf(-1) }
     var repoSelected by remember { mutableStateOf(-1) }
+    var historySelected by remember { mutableStateOf(-1) }
 
     MaterialTheme(colors = darkColors(primary = MaterialBlue)) {
 
@@ -200,6 +206,7 @@ fun FrameWindowScope.App() {
                                 if (url.isNotEmpty()) {
                                     Desktop.getDesktop().browse(URI(url))
                                 }
+                                if (it !in historyTopicList) historyTopicList.add(it)
                             }
                         }
                     },
@@ -232,6 +239,55 @@ fun FrameWindowScope.App() {
                 )
             }
 
+            // History
+            Menu("History", mnemonic = 'H') {
+
+                Item(
+                    "${if (scaffoldState.drawerState.isClosed) "Open" else "Close"}  History",
+                    onClick = {
+                        scope.launch {
+                            if (scaffoldState.drawerState.isClosed) scaffoldState.drawerState.open() else scaffoldState.drawerState.close()
+                        }
+                    },
+                    shortcut = KeyShortcut(Key.H, meta = true, alt = true, shift = true)
+                )
+
+                Item(
+                    "Previous",
+                    onClick = {
+                        if (historyTopicList.isNotEmpty() && historySelected > -1) {
+                            scope.launch { historyState.animateScrollToItem(--historySelected) }
+                        }
+                    },
+                    shortcut = KeyShortcut(Key.PageUp, meta = true, alt = true, shift = true)
+                )
+                Item(
+                    "Next",
+                    onClick = {
+                        if (historyTopicList.isNotEmpty() && historySelected < historyTopicList.lastIndex) {
+                            scope.launch { historyState.animateScrollToItem(++historySelected) }
+                        }
+                    },
+                    shortcut = KeyShortcut(Key.PageDown, meta = true, alt = true, shift = true)
+                )
+                Separator()
+                Item(
+                    "Open",
+                    enabled = historyTopicList.isNotEmpty() && historySelected in 0..historyTopicList.lastIndex,
+                    onClick = {
+                        if (historyTopicList.isNotEmpty() && historySelected in 0..historyTopicList.lastIndex) {
+                            historyTopicList.getOrNull(historySelected)?.let {
+                                val url = it.url
+                                if (url.isNotEmpty()) {
+                                    Desktop.getDesktop().browse(URI(url))
+                                }
+                            }
+                        }
+                    },
+                    shortcut = KeyShortcut(Key.O, meta = true, alt = true, shift = true)
+                )
+            }
+
             Menu("Settings") {
                 CheckboxItem(
                     "Show Icon",
@@ -242,10 +298,66 @@ fun FrameWindowScope.App() {
         }
 
         Scaffold(
+            scaffoldState = scaffoldState,
+            drawerContent = {
+                Scaffold(
+                    topBar = {
+                        TopAppBar(
+                            title = { Text("History") },
+                            actions = {
+                                IconButton(onClick = { scope.launch { scaffoldState.drawerState.close() } }) { Icon(Icons.Default.Close, null) }
+                            }
+                        )
+                    },
+                ) {
+                    LazyColumn(
+                        contentPadding = it,
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.padding(horizontal = 4.dp),
+                        state = historyState
+                    ) {
+                        itemsIndexed(historyTopicList) { index, topic ->
+                            CustomTooltip(
+                                tooltip = {
+                                    // composable tooltip content
+                                    Column(modifier = Modifier.padding(10.dp)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Default.Star, null)
+                                            Text(topic.stars.toString())
+                                        }
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Default.Person, null)
+                                            Text(topic.watchers.toString())
+                                        }
+                                    }
+                                }
+                            ) {
+                                TopicItem(topic, historySelected == index, topicsToSearch, MaterialTheme.colors.primarySurface) { t ->
+                                    if (t in topicsToSearch) {
+                                        topicsToSearch.remove(t)
+                                    } else {
+                                        topicsToSearch.add(t)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
             topBar = {
                 TopAppBar(
                     title = { Text("Topics") },
                     actions = {
+
+                        CustomTooltip(
+                            tooltip = { Box(Modifier.padding(10.dp)) { Text("History (Cmd+Alt+Shift+H)") } },
+                        ) {
+                            IconButton(onClick = {
+                                scope.launch {
+                                    if (scaffoldState.drawerState.isClosed) scaffoldState.drawerState.open() else scaffoldState.drawerState.close()
+                                }
+                            }) { Icon(Icons.Default.History, null) }
+                        }
 
                         CustomTooltip(
                             tooltip = { Box(Modifier.padding(10.dp)) { Text("Refresh (Cmd+R)") } },
@@ -357,7 +469,12 @@ fun FrameWindowScope.App() {
                                         }
                                     }
                                 ) {
-                                    TopicItem(topic, repoSelected == index, topicsToSearch) { t ->
+                                    TopicItem(
+                                        topic,
+                                        repoSelected == index,
+                                        topicsToSearch,
+                                        onClick = { if (topic !in historyTopicList) historyTopicList.add(topic) }
+                                    ) { t ->
                                         if (t in topicsToSearch) {
                                             topicsToSearch.remove(t)
                                         } else {
@@ -437,12 +554,19 @@ fun CustomTooltip(
 @ExperimentalFoundationApi
 @ExperimentalMaterialApi
 @Composable
-fun TopicItem(item: GitHubTopic, isSelected: Boolean, topicList: List<String> = emptyList(), onChipClick: (String) -> Unit) {
+fun TopicItem(
+    item: GitHubTopic,
+    isSelected: Boolean,
+    topicList: List<String> = emptyList(),
+    unselectedColor: Color = Color.Transparent,
+    onClick: () -> Unit = {},
+    onChipClick: (String) -> Unit
+) {
     Card(
-        onClick = { Desktop.getDesktop().browse(URI.create(item.url)) },
+        onClick = { Desktop.getDesktop().browse(URI.create(item.url)).also { onClick() } },
         border = BorderStroke(
             width = animateDpAsState(if (isSelected) 4.dp else 0.dp).value,
-            color = animateColorAsState(if (isSelected) MaterialBlue else Color.Transparent).value
+            color = animateColorAsState(if (isSelected) MaterialBlue else unselectedColor).value
         )
     ) {
         Column(modifier = Modifier.padding(4.dp)) {

@@ -1,34 +1,21 @@
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.materialIcon
+import androidx.compose.material.icons.materialPath
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.Constraints
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Placeable
-import androidx.compose.ui.res.loadImageBitmap
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.IOException
-import java.net.URL
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.*
 import kotlin.math.max
 
 val MaterialBlue = Color(0xFF1976d2)
@@ -360,3 +347,40 @@ fun CustomBottomAppBar(
     }
 }
 
+public val Icons.Filled.History: ImageVector
+    get() {
+        if (_history != null) {
+            return _history!!
+        }
+        _history = materialIcon(name = "Filled.History") {
+            materialPath {
+                moveTo(13.0f, 3.0f)
+                curveToRelative(-4.97f, 0.0f, -9.0f, 4.03f, -9.0f, 9.0f)
+                lineTo(1.0f, 12.0f)
+                lineToRelative(3.89f, 3.89f)
+                lineToRelative(0.07f, 0.14f)
+                lineTo(9.0f, 12.0f)
+                lineTo(6.0f, 12.0f)
+                curveToRelative(0.0f, -3.87f, 3.13f, -7.0f, 7.0f, -7.0f)
+                reflectiveCurveToRelative(7.0f, 3.13f, 7.0f, 7.0f)
+                reflectiveCurveToRelative(-3.13f, 7.0f, -7.0f, 7.0f)
+                curveToRelative(-1.93f, 0.0f, -3.68f, -0.79f, -4.94f, -2.06f)
+                lineToRelative(-1.42f, 1.42f)
+                curveTo(8.27f, 19.99f, 10.51f, 21.0f, 13.0f, 21.0f)
+                curveToRelative(4.97f, 0.0f, 9.0f, -4.03f, 9.0f, -9.0f)
+                reflectiveCurveToRelative(-4.03f, -9.0f, -9.0f, -9.0f)
+                close()
+                moveTo(12.0f, 8.0f)
+                verticalLineToRelative(5.0f)
+                lineToRelative(4.28f, 2.54f)
+                lineToRelative(0.72f, -1.21f)
+                lineToRelative(-3.5f, -2.08f)
+                lineTo(13.5f, 8.0f)
+                lineTo(12.0f, 8.0f)
+                close()
+            }
+        }
+        return _history!!
+    }
+
+private var _history: ImageVector? = null
