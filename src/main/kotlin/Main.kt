@@ -132,7 +132,6 @@ fun FrameWindowScope.App() {
 
             // History
             Menu("History", mnemonic = 'H') {
-
                 Item(
                     "${if (scaffoldState.drawerState.isClosed) "Open" else "Close"}  History",
                     onClick = {
@@ -211,8 +210,7 @@ fun FrameWindowScope.App() {
                                     viewModel.historySelected == index,
                                     viewModel,
                                     MaterialTheme.colors.primarySurface,
-                                    { viewModel.historyClick(topic) }
-                                ) { t -> viewModel.toggleTopic(t) }
+                                ) { viewModel.historyClick(topic) }
                             }
                         }
                     }
@@ -332,9 +330,8 @@ fun FrameWindowScope.App() {
                                     TopicItem(
                                         topic,
                                         viewModel.repoSelected == index,
-                                        viewModel = viewModel,
-                                        onClick = { viewModel.cardClick(topic) }
-                                    ) { t -> viewModel.toggleTopic(t) }
+                                        viewModel = viewModel
+                                    ) { viewModel.cardClick(topic) }
                                 }
                             }
                         }
@@ -413,8 +410,7 @@ fun TopicItem(
     isSelected: Boolean,
     viewModel: TopicViewModel,
     unselectedColor: Color = Color.Transparent,
-    onClick: () -> Unit = {},
-    onChipClick: (String) -> Unit
+    onClick: () -> Unit
 ) {
     Card(
         onClick = onClick,
@@ -453,7 +449,7 @@ fun TopicItem(
                     CustomChip(
                         it,
                         modifier = Modifier
-                            .clickable { onChipClick(it) }
+                            .clickable { viewModel.toggleTopic(it) }
                             .padding(2.dp),
                         textColor = animateColorAsState(
                             if (viewModel.topicsToSearch.any { t -> t.equals(it, true) }) MaterialTheme.colors.onPrimary
