@@ -25,7 +25,7 @@ class TopicViewModel {
     var isAskingToClose by mutableStateOf(false)
 
     fun onTopicAdd() {
-        if (text.isNotEmpty()) {
+        if (text.isNotEmpty() && text !in topicsToSearch) {
             topicsToSearch.add(text.trim())
             text = ""
         }
@@ -125,6 +125,20 @@ class TopicViewModel {
         }
     }
 
+    suspend fun scrollToTopTopic(topicState: LazyListState) {
+        if (topicsToSearch.isNotEmpty()) {
+            topicSelected = 0
+            topicState.animateScrollToItem(0)
+        }
+    }
+
+    suspend fun scrollToBottomTopic(topicState: LazyListState) {
+        if (topicsToSearch.isNotEmpty()) {
+            topicSelected = topicsToSearch.lastIndex
+            topicState.animateScrollToItem(topicSelected)
+        }
+    }
+
     fun deleteTopic() {
         if (topicsToSearch.isNotEmpty() && topicSelected in 0..topicsToSearch.lastIndex)
             topicsToSearch.removeAt(topicSelected)
@@ -139,6 +153,20 @@ class TopicViewModel {
     suspend fun nextRepoSelect(repoState: LazyListState) {
         if (topicList.isNotEmpty() && repoSelected < topicList.lastIndex) {
             repoState.animateScrollToItem(++repoSelected)
+        }
+    }
+
+    suspend fun scrollToTopRepo(repoState: LazyListState) {
+        if (topicList.isNotEmpty()) {
+            repoSelected = 0
+            repoState.animateScrollToItem(0)
+        }
+    }
+
+    suspend fun scrollToBottomRepo(repoState: LazyListState) {
+        if (topicList.isNotEmpty()) {
+            repoSelected = topicList.lastIndex
+            repoState.animateScrollToItem(repoSelected)
         }
     }
 
@@ -174,6 +202,20 @@ class TopicViewModel {
                     Desktop.getDesktop().browse(URI(url))
                 }
             }
+        }
+    }
+
+    suspend fun scrollToTopHistory(historyState: LazyListState) {
+        if (historyTopicList.isNotEmpty()) {
+            historySelected = 0
+            historyState.animateScrollToItem(0)
+        }
+    }
+
+    suspend fun scrollToBottomHistory(historyState: LazyListState) {
+        if (historyTopicList.isNotEmpty()) {
+            historySelected = historyTopicList.lastIndex
+            historyState.animateScrollToItem(historySelected)
         }
     }
 

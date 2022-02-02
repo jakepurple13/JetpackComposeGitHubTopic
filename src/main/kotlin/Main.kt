@@ -76,6 +76,16 @@ fun FrameWindowScope.App() {
                     onClick = { scope.launch { viewModel.nextTopicSelect(topicState) } },
                     shortcut = KeyShortcut(Key.PageDown, meta = true, shift = true)
                 )
+                Item(
+                    "Scroll to top",
+                    onClick = { scope.launch { viewModel.scrollToTopTopic(topicState) } },
+                    shortcut = KeyShortcut(Key.MoveHome, meta = true, shift = true)
+                )
+                Item(
+                    "Scroll to bottom",
+                    onClick = { scope.launch { viewModel.scrollToBottomTopic(topicState) } },
+                    shortcut = KeyShortcut(Key.MoveEnd, meta = true, shift = true)
+                )
                 Separator()
                 Item(
                     "Delete",
@@ -95,6 +105,16 @@ fun FrameWindowScope.App() {
                     "Next",
                     onClick = { scope.launch { viewModel.nextRepoSelect(state) } },
                     shortcut = KeyShortcut(Key.PageDown, meta = true)
+                )
+                Item(
+                    "Scroll to top",
+                    onClick = { scope.launch { viewModel.scrollToTopRepo(state) } },
+                    shortcut = KeyShortcut(Key.MoveHome, meta = true)
+                )
+                Item(
+                    "Scroll to bottom",
+                    onClick = { scope.launch { viewModel.scrollToBottomRepo(state) } },
+                    shortcut = KeyShortcut(Key.MoveEnd, meta = true)
                 )
                 Separator()
                 Item(
@@ -144,13 +164,23 @@ fun FrameWindowScope.App() {
 
                 Item(
                     "Previous",
-                    onClick = { scope.launch { viewModel.previousHistorySelect(state) } },
+                    onClick = { scope.launch { viewModel.previousHistorySelect(historyState) } },
                     shortcut = KeyShortcut(Key.PageUp, meta = true, alt = true, shift = true)
                 )
                 Item(
                     "Next",
-                    onClick = { scope.launch { viewModel.nextHistorySelect(state) } },
+                    onClick = { scope.launch { viewModel.nextHistorySelect(historyState) } },
                     shortcut = KeyShortcut(Key.PageDown, meta = true, alt = true, shift = true)
+                )
+                Item(
+                    "Scroll to top",
+                    onClick = { scope.launch { viewModel.scrollToTopHistory(historyState) } },
+                    shortcut = KeyShortcut(Key.MoveHome, meta = true, alt = true, shift = true)
+                )
+                Item(
+                    "Scroll to bottom",
+                    onClick = { scope.launch { viewModel.scrollToBottomHistory(historyState) } },
+                    shortcut = KeyShortcut(Key.MoveEnd, meta = true, alt = true, shift = true)
                 )
                 Separator()
                 Item(
