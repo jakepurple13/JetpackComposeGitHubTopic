@@ -32,12 +32,8 @@ import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.MenuBar
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.ocpsoft.prettytime.PrettyTime
-import java.awt.Desktop
-import java.net.URI
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.ZoneId
@@ -48,99 +44,23 @@ import java.util.*
 @Preview
 fun FrameWindowScope.App() {
 
+    val viewModel = remember { TopicViewModel() }
     val scope = rememberCoroutineScope()
-
-    val historyTopicList = remember { mutableStateListOf<GitHubTopic>() }
-
-    var topicList by remember { mutableStateOf<List<GitHubTopic>>(emptyList()) }
-    val topicsToSearch = remember { mutableStateListOf<String>() }
-    var text by remember { mutableStateOf("") }
     val state = rememberLazyListState()
     val topicState = rememberLazyListState()
     val historyState = rememberLazyListState()
-
-    var page by remember { mutableStateOf(1) }
-
     val scaffoldState = rememberScaffoldState()
-
-    var topicSelected by remember { mutableStateOf(-1) }
-    var repoSelected by remember { mutableStateOf(-1) }
-    var historySelected by remember { mutableStateOf(-1) }
 
     MaterialTheme(colors = darkColors(primary = MaterialBlue)) {
 
-        var showSearching by remember { mutableStateOf(false) }
-        var isAskingToClose by remember { mutableStateOf(false) }
-
-        if (isAskingToClose) {
+        if (viewModel.isAskingToClose) {
             AlertDialog(
-                onDismissRequest = { isAskingToClose = false },
+                onDismissRequest = { viewModel.isAskingToClose = false },
                 title = { Text("Please enter topics to search") },
                 text = { Text("Enter topics to search") },
-                confirmButton = { Button(onClick = { isAskingToClose = false }) { Text("Close") } },
+                confirmButton = { Button(onClick = { viewModel.isAskingToClose = false }) { Text("Close") } },
                 dialogProvider = PopupAlertDialogProvider
             )
-        }
-
-        fun previousPage() {
-            if (topicsToSearch.isNotEmpty()) {
-                if (page > 1) {
-                    page--
-                    repoSelected = -1
-                    scope.launch {
-                        withContext(Dispatchers.IO) {
-                            topicList = getTopics2(
-                                searching = { showSearching = true },
-                                done = { showSearching = false },
-                                topics = topicsToSearch.toTypedArray(),
-                                page = page
-                            )
-                        }
-                        state.scrollToItem(0)
-                    }
-                }
-            } else {
-                isAskingToClose = true
-            }
-        }
-
-        fun nextPage() {
-            if (topicsToSearch.isNotEmpty()) {
-                scope.launch {
-                    repoSelected = -1
-                    withContext(Dispatchers.IO) {
-                        topicList = getTopics2(
-                            searching = { showSearching = true },
-                            done = { showSearching = false },
-                            topics = topicsToSearch.toTypedArray(),
-                            page = ++page
-                        )
-                    }
-                    state.scrollToItem(0)
-                }
-            } else {
-                isAskingToClose = true
-            }
-        }
-
-        fun search(pageToSearch: Int = 1) {
-            scope.launch {
-                if (topicsToSearch.isNotEmpty()) {
-                    page = pageToSearch
-                    repoSelected = -1
-                    withContext(Dispatchers.IO) {
-                        topicList = getTopics2(
-                            searching = { showSearching = true },
-                            done = { showSearching = false },
-                            topics = topicsToSearch.toTypedArray(),
-                            page = pageToSearch
-                        )
-                    }
-                    state.scrollToItem(0)
-                } else {
-                    isAskingToClose = true
-                }
-            }
         }
 
         MenuBar {
@@ -148,29 +68,18 @@ fun FrameWindowScope.App() {
             Menu("Topics", mnemonic = 'T') {
                 Item(
                     "Previous",
-                    onClick = {
-                        if (topicsToSearch.isNotEmpty() && topicSelected > -1) {
-                            scope.launch { topicState.animateScrollToItem(--topicSelected) }
-                        }
-                    },
+                    onClick = { scope.launch { viewModel.previousTopicSelect(topicState) } },
                     shortcut = KeyShortcut(Key.PageUp, meta = true, shift = true)
                 )
                 Item(
                     "Next",
-                    onClick = {
-                        if (topicsToSearch.isNotEmpty() && topicSelected < topicsToSearch.lastIndex) {
-                            scope.launch { topicState.animateScrollToItem(++topicSelected) }
-                        }
-                    },
+                    onClick = { scope.launch { viewModel.nextTopicSelect(topicState) } },
                     shortcut = KeyShortcut(Key.PageDown, meta = true, shift = true)
                 )
                 Separator()
                 Item(
                     "Delete",
-                    onClick = {
-                        if (topicsToSearch.isNotEmpty() && topicSelected in 0..topicsToSearch.lastIndex)
-                            topicsToSearch.removeAt(topicSelected)
-                    },
+                    onClick = { viewModel.deleteTopic() },
                     shortcut = KeyShortcut(Key.Delete, meta = true, shift = true)
                 )
             }
@@ -179,37 +88,19 @@ fun FrameWindowScope.App() {
             Menu("Repo", mnemonic = 'R') {
                 Item(
                     "Previous",
-                    onClick = {
-                        if (topicList.isNotEmpty() && repoSelected > -1) {
-                            scope.launch { state.animateScrollToItem(--repoSelected) }
-                        }
-                    },
+                    onClick = { scope.launch { viewModel.previousRepoSelect(state) } },
                     shortcut = KeyShortcut(Key.PageUp, meta = true)
                 )
                 Item(
                     "Next",
-                    onClick = {
-                        if (topicList.isNotEmpty() && repoSelected < topicList.lastIndex) {
-                            scope.launch { state.animateScrollToItem(++repoSelected) }
-                        }
-                    },
+                    onClick = { scope.launch { viewModel.nextRepoSelect(state) } },
                     shortcut = KeyShortcut(Key.PageDown, meta = true)
                 )
                 Separator()
                 Item(
                     "Open",
-                    enabled = topicList.isNotEmpty() && repoSelected in 0..topicList.lastIndex,
-                    onClick = {
-                        if (topicList.isNotEmpty() && repoSelected in 0..topicList.lastIndex) {
-                            topicList.getOrNull(repoSelected)?.let {
-                                val url = it.url
-                                if (url.isNotEmpty()) {
-                                    Desktop.getDesktop().browse(URI(url))
-                                }
-                                if (it !in historyTopicList) historyTopicList.add(it)
-                            }
-                        }
-                    },
+                    enabled = viewModel.topicList.isNotEmpty() && viewModel.repoSelected in 0..viewModel.topicList.lastIndex,
+                    onClick = { viewModel.openSelectedRepo() },
                     shortcut = KeyShortcut(Key.O, meta = true)
                 )
             }
@@ -218,23 +109,23 @@ fun FrameWindowScope.App() {
             Menu("Search", 'S') {
                 Item(
                     "Search",
-                    onClick = { search(1) },
+                    onClick = { scope.launch { viewModel.search(state, 1) } },
                     shortcut = KeyShortcut(Key.S, meta = true)
                 )
                 Item(
                     "Refresh",
-                    onClick = { search(page) },
+                    onClick = { scope.launch { viewModel.refresh(state) } },
                     shortcut = KeyShortcut(Key.R, meta = true)
                 )
                 Separator()
                 Item(
                     "Previous Page",
-                    onClick = { previousPage() },
+                    onClick = { scope.launch { viewModel.previousPage(state) } },
                     shortcut = KeyShortcut(Key.LeftBracket, meta = true)
                 )
                 Item(
                     "Next Page",
-                    onClick = { nextPage() },
+                    onClick = { scope.launch { viewModel.nextPage(state) } },
                     shortcut = KeyShortcut(Key.RightBracket, meta = true)
                 )
             }
@@ -254,36 +145,19 @@ fun FrameWindowScope.App() {
 
                 Item(
                     "Previous",
-                    onClick = {
-                        if (historyTopicList.isNotEmpty() && historySelected > -1) {
-                            scope.launch { historyState.animateScrollToItem(--historySelected) }
-                        }
-                    },
+                    onClick = { scope.launch { viewModel.previousHistorySelect(state) } },
                     shortcut = KeyShortcut(Key.PageUp, meta = true, alt = true, shift = true)
                 )
                 Item(
                     "Next",
-                    onClick = {
-                        if (historyTopicList.isNotEmpty() && historySelected < historyTopicList.lastIndex) {
-                            scope.launch { historyState.animateScrollToItem(++historySelected) }
-                        }
-                    },
+                    onClick = { scope.launch { viewModel.nextHistorySelect(state) } },
                     shortcut = KeyShortcut(Key.PageDown, meta = true, alt = true, shift = true)
                 )
                 Separator()
                 Item(
                     "Open",
-                    enabled = historyTopicList.isNotEmpty() && historySelected in 0..historyTopicList.lastIndex,
-                    onClick = {
-                        if (historyTopicList.isNotEmpty() && historySelected in 0..historyTopicList.lastIndex) {
-                            historyTopicList.getOrNull(historySelected)?.let {
-                                val url = it.url
-                                if (url.isNotEmpty()) {
-                                    Desktop.getDesktop().browse(URI(url))
-                                }
-                            }
-                        }
-                    },
+                    enabled = viewModel.historyTopicList.isNotEmpty() && viewModel.historySelected in 0..viewModel.historyTopicList.lastIndex,
+                    onClick = { viewModel.openSelectedHistory() },
                     shortcut = KeyShortcut(Key.O, meta = true, alt = true, shift = true)
                 )
             }
@@ -316,7 +190,7 @@ fun FrameWindowScope.App() {
                         modifier = Modifier.padding(horizontal = 4.dp),
                         state = historyState
                     ) {
-                        itemsIndexed(historyTopicList) { index, topic ->
+                        itemsIndexed(viewModel.historyTopicList) { index, topic ->
                             CustomTooltip(
                                 tooltip = {
                                     // composable tooltip content
@@ -332,13 +206,13 @@ fun FrameWindowScope.App() {
                                     }
                                 }
                             ) {
-                                TopicItem(topic, historySelected == index, topicsToSearch, MaterialTheme.colors.primarySurface) { t ->
-                                    if (t in topicsToSearch) {
-                                        topicsToSearch.remove(t)
-                                    } else {
-                                        topicsToSearch.add(t)
-                                    }
-                                }
+                                TopicItem(
+                                    topic,
+                                    viewModel.historySelected == index,
+                                    viewModel,
+                                    MaterialTheme.colors.primarySurface,
+                                    { viewModel.historyClick(topic) }
+                                ) { t -> viewModel.toggleTopic(t) }
                             }
                         }
                     }
@@ -361,26 +235,26 @@ fun FrameWindowScope.App() {
 
                         CustomTooltip(
                             tooltip = { Box(Modifier.padding(10.dp)) { Text("Refresh (Cmd+R)") } },
-                        ) { IconButton(onClick = { search(page) }) { Icon(Icons.Default.Refresh, null) } }
+                        ) { IconButton(onClick = { scope.launch { viewModel.refresh(state) } }) { Icon(Icons.Default.Refresh, null) } }
 
-                        Text("Page: $page")
+                        Text("Page: ${viewModel.page}")
 
                         CustomTooltip(
                             tooltip = { Box(Modifier.padding(10.dp)) { Text("Previous Page (Cmd+Left)") } }
-                        ) { IconButton(onClick = { previousPage() }) { Icon(Icons.Default.KeyboardArrowLeft, null) } }
+                        ) { IconButton(onClick = { scope.launch { viewModel.previousPage(state) } }) { Icon(Icons.Default.KeyboardArrowLeft, null) } }
                         CustomTooltip(
                             tooltip = { Box(Modifier.padding(10.dp)) { Text("Next Page (Cmd+Right)") } }
-                        ) { IconButton(onClick = { nextPage() }) { Icon(Icons.Default.KeyboardArrowRight, null) } }
+                        ) { IconButton(onClick = { scope.launch { viewModel.nextPage(state) } }) { Icon(Icons.Default.KeyboardArrowRight, null) } }
 
-                        Text("${topicList.size}")
+                        Text("${viewModel.topicList.size}")
                     }
                 )
             },
             bottomBar = {
                 CustomBottomAppBar {
                     OutlinedTextField(
-                        value = text,
-                        onValueChange = { text = it },
+                        value = viewModel.text,
+                        onValueChange = { viewModel.text = it },
                         singleLine = true,
                         shape = MaterialTheme.shapes.medium,
                         label = { Text("Add Topic") },
@@ -390,37 +264,24 @@ fun FrameWindowScope.App() {
                                 CustomTooltip(
                                     tooltip = { Box(Modifier.padding(10.dp)) { Text("Add to List (Enter)") } },
                                     backgroundColor = MaterialTheme.colors.primarySurface,
-                                ) {
-                                    IconButton(onClick = {
-                                        if (text.isNotEmpty()) {
-                                            topicsToSearch.add(text)
-                                            text = ""
-                                        }
-                                    }) { Icon(Icons.Default.Add, null) }
-                                }
+                                ) { IconButton(onClick = { viewModel.onTopicAdd() }) { Icon(Icons.Default.Add, null) } }
 
                                 CustomTooltip(
                                     tooltip = { Box(Modifier.padding(10.dp)) { Text("Search (Cmd+S)") } },
                                     backgroundColor = MaterialTheme.colors.primarySurface,
-                                ) { IconButton(onClick = { search(1) }) { Icon(Icons.Default.Search, null) } }
+                                ) { IconButton(onClick = { scope.launch { viewModel.search(state, 1) } }) { Icon(Icons.Default.Search, null) } }
                             }
                         },
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                        keyboardActions = KeyboardActions(
-                            onNext = {
-                                topicsToSearch.add(text.trim())
-                                text = ""
-                            }
-                        ),
+                        keyboardActions = KeyboardActions(onNext = { viewModel.onTopicAdd() }),
                         modifier = Modifier
                             //.padding(4.dp)
                             .fillMaxWidth()
                             .onPreviewKeyEvent {
                                 when {
                                     // Add to search list
-                                    text.isNotEmpty() && it.key == Key.Enter -> {
-                                        topicsToSearch.add(text.trim())
-                                        text = ""
+                                    it.key == Key.Enter -> {
+                                        viewModel.onTopicAdd()
                                         true
                                     }
                                     else -> false
@@ -437,8 +298,7 @@ fun FrameWindowScope.App() {
                     .padding(it)
             ) {
                 Box(modifier = Modifier.weight(5f)) {
-
-                    if (showSearching) {
+                    if (viewModel.showSearching) {
                         CircularProgressIndicator(
                             modifier = Modifier
                                 .padding(8.dp)
@@ -453,7 +313,7 @@ fun FrameWindowScope.App() {
                             state = state,
                             verticalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
-                            itemsIndexed(topicList) { index, topic ->
+                            itemsIndexed(viewModel.topicList) { index, topic ->
                                 CustomTooltip(
                                     tooltip = {
                                         // composable tooltip content
@@ -471,16 +331,10 @@ fun FrameWindowScope.App() {
                                 ) {
                                     TopicItem(
                                         topic,
-                                        repoSelected == index,
-                                        topicsToSearch,
-                                        onClick = { if (topic !in historyTopicList) historyTopicList.add(topic) }
-                                    ) { t ->
-                                        if (t in topicsToSearch) {
-                                            topicsToSearch.remove(t)
-                                        } else {
-                                            topicsToSearch.add(t)
-                                        }
-                                    }
+                                        viewModel.repoSelected == index,
+                                        viewModel = viewModel,
+                                        onClick = { viewModel.cardClick(topic) }
+                                    ) { t -> viewModel.toggleTopic(t) }
                                 }
                             }
                         }
@@ -500,12 +354,12 @@ fun FrameWindowScope.App() {
                     state = topicState,
                 ) {
                     stickyHeader { Text("Topics to Search for:") }
-                    itemsIndexed(topicsToSearch) { index, topic ->
+                    itemsIndexed(viewModel.topicsToSearch) { index, topic ->
                         Card(
-                            onClick = { topicsToSearch.remove(topic) },
+                            onClick = { viewModel.removeTopic(topic) },
                             border = BorderStroke(
-                                width = animateDpAsState(if (topicSelected == index) 4.dp else 0.dp).value,
-                                color = animateColorAsState(if (topicSelected == index) MaterialBlue else Color.Transparent).value
+                                width = animateDpAsState(if (viewModel.topicSelected == index) 4.dp else 0.dp).value,
+                                color = animateColorAsState(if (viewModel.topicSelected == index) MaterialBlue else Color.Transparent).value
                             )
                         ) {
                             ListItem(
@@ -557,13 +411,13 @@ fun CustomTooltip(
 fun TopicItem(
     item: GitHubTopic,
     isSelected: Boolean,
-    topicList: List<String> = emptyList(),
+    viewModel: TopicViewModel,
     unselectedColor: Color = Color.Transparent,
     onClick: () -> Unit = {},
     onChipClick: (String) -> Unit
 ) {
     Card(
-        onClick = { Desktop.getDesktop().browse(URI.create(item.url)).also { onClick() } },
+        onClick = onClick,
         border = BorderStroke(
             width = animateDpAsState(if (isSelected) 4.dp else 0.dp).value,
             color = animateColorAsState(if (isSelected) MaterialBlue else unselectedColor).value
@@ -602,11 +456,11 @@ fun TopicItem(
                             .clickable { onChipClick(it) }
                             .padding(2.dp),
                         textColor = animateColorAsState(
-                            if (topicList.any { t -> t.equals(it, true) }) MaterialTheme.colors.onPrimary
+                            if (viewModel.topicsToSearch.any { t -> t.equals(it, true) }) MaterialTheme.colors.onPrimary
                             else MaterialTheme.colors.onSurface
                         ).value,
                         backgroundColor = animateColorAsState(
-                            if (topicList.any { t -> t.equals(it, true) }) MaterialBlue
+                            if (viewModel.topicsToSearch.any { t -> t.equals(it, true) }) MaterialBlue
                             else MaterialTheme.colors.surface
                         ).value
                     )

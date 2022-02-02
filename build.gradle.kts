@@ -10,6 +10,8 @@ plugins {
 group = "me.jrein"
 version = "1.0"
 
+val exposedVersion = "0.37.3"
+
 repositories {
     google()
     mavenCentral()
@@ -21,6 +23,10 @@ dependencies {
     implementation("com.github.tsohr:json:0.0.2")
     implementation("com.mikepenz:multiplatform-markdown-renderer-jvm:0.4.0")
     implementation("org.ocpsoft.prettytime:prettytime:5.0.2.Final")
+    /*implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
+    implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
+    implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
+    implementation("org.jetbrains.exposed:exposed-java-time:$exposedVersion")*/
 }
 
 tasks.withType<KotlinCompile>() {
