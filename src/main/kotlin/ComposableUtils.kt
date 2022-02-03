@@ -1,3 +1,5 @@
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.TooltipArea
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
@@ -8,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
@@ -79,10 +82,12 @@ public enum class FlowCrossAxisAlignment {
      * Place children such that their center is in the middle of the cross axis.
      */
     Center,
+
     /**
      * Place children such that their start edge is aligned to the start edge of the cross axis.
      */
     Start,
+
     /**
      * Place children such that their end edge is aligned to the end edge of the cross axis.
      */
@@ -108,6 +113,7 @@ private fun Flow(
 ) {
     fun Placeable.mainAxisSize() =
         if (orientation == LayoutOrientation.Horizontal) width else height
+
     fun Placeable.crossAxisSize() =
         if (orientation == LayoutOrientation.Horizontal) height else width
 
@@ -250,6 +256,7 @@ public enum class SizeMode {
      * subject to the incoming layout constraints.
      */
     Wrap,
+
     /**
      * Maximize the amount of free space by expanding to fill the available space,
      * subject to the incoming layout constraints.
@@ -345,6 +352,27 @@ fun CustomBottomAppBar(
             )
         }
     }
+}
+
+@ExperimentalFoundationApi
+@Composable
+fun CustomTooltip(
+    backgroundColor: Color = MaterialTheme.colors.surface,
+    contentColor: Color = contentColorFor(backgroundColor),
+    tooltip: @Composable () -> Unit,
+    content: @Composable () -> Unit
+) {
+    TooltipArea(
+        tooltip = {
+            // composable tooltip content
+            Surface(
+                modifier = Modifier.shadow(4.dp),
+                color = backgroundColor,
+                contentColor = contentColor,
+                shape = RoundedCornerShape(4.dp)
+            ) { tooltip() }
+        }
+    ) { content() }
 }
 
 public val Icons.Filled.History: ImageVector

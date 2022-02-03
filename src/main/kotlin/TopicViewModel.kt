@@ -11,7 +11,7 @@ import java.net.URI
 class TopicViewModel {
 
     var text by mutableStateOf("")
-    var topicList by mutableStateOf(emptyList<GitHubTopic>())
+    var repoList by mutableStateOf(emptyList<GitHubTopic>())
     val historyTopicList = mutableStateListOf<GitHubTopic>()
     val topicsToSearch = mutableStateListOf<String>()
 
@@ -54,7 +54,7 @@ class TopicViewModel {
             page = pageToSearch
             repoSelected = -1
             withContext(Dispatchers.IO) {
-                topicList = getTopics2(
+                repoList = getTopics2(
                     searching = { showSearching = true },
                     done = { showSearching = false },
                     topics = topicsToSearch.toTypedArray(),
@@ -72,7 +72,7 @@ class TopicViewModel {
             if (page > 1) {
                 repoSelected = -1
                 withContext(Dispatchers.IO) {
-                    topicList = getTopics2(
+                    repoList = getTopics2(
                         searching = { showSearching = true },
                         done = { showSearching = false },
                         topics = topicsToSearch.toTypedArray(),
@@ -90,7 +90,7 @@ class TopicViewModel {
         if (topicsToSearch.isNotEmpty()) {
             repoSelected = -1
             withContext(Dispatchers.IO) {
-                topicList = getTopics2(
+                repoList = getTopics2(
                     searching = { showSearching = true },
                     done = { showSearching = false },
                     topics = topicsToSearch.toTypedArray(),
@@ -148,34 +148,34 @@ class TopicViewModel {
     }
 
     suspend fun previousRepoSelect(repoState: LazyListState) {
-        if (topicList.isNotEmpty() && repoSelected > -1) {
+        if (repoList.isNotEmpty() && repoSelected > -1) {
             repoState.animateScrollToItem(--repoSelected)
         }
     }
 
     suspend fun nextRepoSelect(repoState: LazyListState) {
-        if (topicList.isNotEmpty() && repoSelected < topicList.lastIndex) {
+        if (repoList.isNotEmpty() && repoSelected < repoList.lastIndex) {
             repoState.animateScrollToItem(++repoSelected)
         }
     }
 
     suspend fun scrollToTopRepo(repoState: LazyListState) {
-        if (topicList.isNotEmpty()) {
+        if (repoList.isNotEmpty()) {
             repoSelected = 0
             repoState.animateScrollToItem(0)
         }
     }
 
     suspend fun scrollToBottomRepo(repoState: LazyListState) {
-        if (topicList.isNotEmpty()) {
-            repoSelected = topicList.lastIndex
+        if (repoList.isNotEmpty()) {
+            repoSelected = repoList.lastIndex
             repoState.animateScrollToItem(repoSelected)
         }
     }
 
     fun openSelectedRepo() {
-        if (topicList.isNotEmpty() && repoSelected in 0..topicList.lastIndex) {
-            topicList.getOrNull(repoSelected)?.let {
+        if (repoList.isNotEmpty() && repoSelected in 0..repoList.lastIndex) {
+            repoList.getOrNull(repoSelected)?.let {
                 val url = it.url
                 if (url.isNotEmpty()) {
                     Desktop.getDesktop().browse(URI(url))

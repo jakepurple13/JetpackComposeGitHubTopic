@@ -8,7 +8,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
@@ -18,7 +17,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.input.key.Key
@@ -121,7 +119,7 @@ fun FrameWindowScope.App() {
                 Separator()
                 Item(
                     "Open",
-                    enabled = viewModel.topicList.isNotEmpty() && viewModel.repoSelected in 0..viewModel.topicList.lastIndex,
+                    enabled = viewModel.repoList.isNotEmpty() && viewModel.repoSelected in 0..viewModel.repoList.lastIndex,
                     onClick = { viewModel.openSelectedRepo() },
                     shortcut = KeyShortcut(Key.O, meta = true)
                 )
@@ -279,7 +277,7 @@ fun FrameWindowScope.App() {
                             tooltip = { Box(Modifier.padding(10.dp)) { Text("Next Page (Cmd+Right)") } }
                         ) { IconButton(onClick = { scope.launch { viewModel.nextPage(state) } }) { Icon(Icons.Default.KeyboardArrowRight, null) } }
 
-                        Text("${viewModel.topicList.size}")
+                        Text("${viewModel.repoList.size}")
                     }
                 )
             },
@@ -346,7 +344,7 @@ fun FrameWindowScope.App() {
                             state = state,
                             verticalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
-                            itemsIndexed(viewModel.topicList) { index, topic ->
+                            itemsIndexed(viewModel.repoList) { index, topic ->
                                 CustomTooltip(
                                     tooltip = {
                                         // composable tooltip content
@@ -420,27 +418,6 @@ fun formatTimestamp(timestamp: String): String {
     val format = SimpleDateFormat("MMM dd, yyyy hh:mm a")
     val date = Instant.parse(timestamp).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
     return timePrinter.format(Date(date)) + " on " + format.format(date)
-}
-
-@ExperimentalFoundationApi
-@Composable
-fun CustomTooltip(
-    backgroundColor: Color = MaterialTheme.colors.surface,
-    contentColor: Color = contentColorFor(backgroundColor),
-    tooltip: @Composable () -> Unit,
-    content: @Composable () -> Unit
-) {
-    TooltipArea(
-        tooltip = {
-            // composable tooltip content
-            Surface(
-                modifier = Modifier.shadow(4.dp),
-                color = backgroundColor,
-                contentColor = contentColor,
-                shape = RoundedCornerShape(4.dp)
-            ) { tooltip() }
-        }
-    ) { content() }
 }
 
 @ExperimentalFoundationApi
