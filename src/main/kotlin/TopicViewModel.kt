@@ -139,8 +139,12 @@ class TopicViewModel {
     }
 
     fun deleteTopic() {
-        if (topicsToSearch.isNotEmpty() && topicSelected in 0..topicsToSearch.lastIndex)
+        if (topicsToSearch.isNotEmpty() && topicSelected in 0..topicsToSearch.lastIndex) {
             topicsToSearch.removeAt(topicSelected)
+            if (topicSelected == topicsToSearch.size) {
+                topicSelected = topicsToSearch.size - 1
+            }
+        }
     }
 
     suspend fun previousRepoSelect(repoState: LazyListState) {
