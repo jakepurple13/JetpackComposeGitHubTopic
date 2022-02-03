@@ -112,6 +112,16 @@ class TopicViewModel {
         Desktop.getDesktop().browse(URI.create(item.url))
     }
 
+    fun addSelectedTopicToHistory() {
+        if (repoList.isNotEmpty()) {
+            repoList.getOrNull(repoSelected)?.let { addTopicToHistory(it) }
+        }
+    }
+
+    fun addTopicToHistory(item: GitHubTopic) {
+        if (item !in historyTopicList) historyTopicList.add(item)
+    }
+
     suspend fun previousTopicSelect(topicState: LazyListState) {
         if (topicsToSearch.isNotEmpty() && topicSelected > -1) {
             topicState.animateScrollToItem(--topicSelected)

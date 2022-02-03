@@ -21,12 +21,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyShortcut
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
@@ -120,6 +122,11 @@ fun FrameWindowScope.App() {
                 enabled = viewModel.repoList.isNotEmpty() && viewModel.repoSelected in 0..viewModel.repoList.lastIndex,
                 onClick = { viewModel.openSelectedRepo() },
                 shortcut = KeyShortcut(Key.O, meta = true)
+            )
+            Item(
+                "Add to History",
+                onClick = { viewModel.addSelectedTopicToHistory() },
+                shortcut = KeyShortcut(Key.A, meta = true, shift = true, alt = true)
             )
         }
 
@@ -363,6 +370,28 @@ fun FrameWindowScope.App() {
                                     }
                                 }
                             ) {
+
+                                var showDropdownMenu by remember { mutableStateOf(false) }
+
+                                DropdownMenu(
+                                    expanded = showDropdownMenu,
+                                    onDismissRequest = { showDropdownMenu = false },
+                                ) {
+                                    DropdownMenuItem(
+                                        onClick = {
+                                            viewModel.addTopicToHistory(topic)
+                                            showDropdownMenu = false
+                                        }
+                                    ) { Text("Add to History") }
+
+                                    DropdownMenuItem(
+                                        onClick = {
+                                            viewModel.cardClick(topic)
+                                            showDropdownMenu = false
+                                        }
+                                    ) { Text("Open") }
+                                }
+
                                 TopicItem(
                                     topic,
                                     viewModel.repoSelected == index,
@@ -370,6 +399,9 @@ fun FrameWindowScope.App() {
                                     modifier = Modifier
                                         .onPointerEvent(PointerEventType.Enter) { viewModel.repoSelected = index }
                                         .onPointerEvent(PointerEventType.Exit) { viewModel.repoSelected = -1 }
+                                        .onPointerEvent(PointerEventType.Press) { p ->
+                                            if (p.buttons.isSecondaryPressed) showDropdownMenu = true
+                                        }
                                 ) { viewModel.cardClick(topic) }
                             }
                         }
@@ -391,6 +423,21 @@ fun FrameWindowScope.App() {
             ) {
                 stickyHeader { Text("Topics to Search for:") }
                 itemsIndexed(viewModel.topicsToSearch) { index, topic ->
+
+                    var showDropdownMenu by remember { mutableStateOf(false) }
+
+                    DropdownMenu(
+                        expanded = showDropdownMenu,
+                        onDismissRequest = { showDropdownMenu = false },
+                    ) {
+                        DropdownMenuItem(
+                            onClick = {
+                                viewModel.removeTopic(topic)
+                                showDropdownMenu = false
+                            }
+                        ) { Text("Remove") }
+                    }
+
                     Card(
                         onClick = { viewModel.removeTopic(topic) },
                         border = BorderStroke(
@@ -400,6 +447,7 @@ fun FrameWindowScope.App() {
                         modifier = Modifier
                             .onPointerEvent(PointerEventType.Enter) { viewModel.topicSelected = index }
                             .onPointerEvent(PointerEventType.Exit) { viewModel.topicSelected = -1 }
+                            .onPointerEvent(PointerEventType.Press) { p -> if (p.buttons.isSecondaryPressed) showDropdownMenu = true }
                     ) {
                         ListItem(
                             text = { Text(topic) },
@@ -510,7 +558,7 @@ fun main() = application {
         transparent = true
     ) {
         MaterialTheme(colors = if (darkTheme) darkColors(primary = MaterialBlue) else lightColors(primary = MaterialBlue)) {
-            Surface(shape = RoundedCornerShape(8.dp)) {
+            Surface(shape = if (state.placement == WindowPlacement.Maximized) RectangleShape else RoundedCornerShape(8.dp)) {
                 Column {
                     WindowDraggableArea(
                         modifier = Modifier.combinedClickable(
