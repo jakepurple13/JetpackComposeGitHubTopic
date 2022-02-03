@@ -51,7 +51,7 @@ fun FrameWindowScope.App() {
     val historyState = rememberLazyListState()
     val scaffoldState = rememberScaffoldState()
 
-    MaterialTheme(colors = darkColors(primary = MaterialBlue)) {
+    MaterialTheme(colors = if (darkTheme) darkColors(primary = MaterialBlue) else lightColors(primary = MaterialBlue)) {
 
         if (viewModel.isAskingToClose) {
             AlertDialog(
@@ -197,6 +197,11 @@ fun FrameWindowScope.App() {
                     onCheckedChange = { showIcon = it },
                     checked = showIcon
                 )
+                CheckboxItem(
+                    "Dark Theme",
+                    onCheckedChange = { darkTheme = it },
+                    checked = darkTheme
+                )
             }
         }
 
@@ -306,7 +311,6 @@ fun FrameWindowScope.App() {
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                         keyboardActions = KeyboardActions(onNext = { viewModel.onTopicAdd() }),
                         modifier = Modifier
-                            //.padding(4.dp)
                             .fillMaxWidth()
                             .onPreviewKeyEvent {
                                 when {
@@ -493,6 +497,7 @@ fun TopicItem(
 }
 
 var showIcon by mutableStateOf(false)
+var darkTheme by mutableStateOf(true)
 
 fun main() = application {
     Window(onCloseRequest = ::exitApplication, title = "GitHub Topics") {
