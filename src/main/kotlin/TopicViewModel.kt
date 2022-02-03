@@ -70,14 +70,13 @@ class TopicViewModel {
     suspend fun previousPage(state: LazyListState) {
         if (topicsToSearch.isNotEmpty()) {
             if (page > 1) {
-                page--
                 repoSelected = -1
                 withContext(Dispatchers.IO) {
                     topicList = getTopics2(
                         searching = { showSearching = true },
                         done = { showSearching = false },
                         topics = topicsToSearch.toTypedArray(),
-                        page = page
+                        page = --page
                     )
                 }
                 state.scrollToItem(0)
@@ -120,7 +119,7 @@ class TopicViewModel {
     }
 
     suspend fun nextTopicSelect(topicState: LazyListState) {
-        if (topicsToSearch.isNotEmpty() && topicSelected < topicList.lastIndex) {
+        if (topicsToSearch.isNotEmpty() && topicSelected < topicsToSearch.lastIndex) {
             topicState.animateScrollToItem(++topicSelected)
         }
     }

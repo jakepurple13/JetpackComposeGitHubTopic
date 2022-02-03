@@ -25,6 +25,8 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyShortcut
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -240,6 +242,9 @@ fun FrameWindowScope.App() {
                                     viewModel.historySelected == index,
                                     viewModel,
                                     MaterialTheme.colors.primarySurface,
+                                    modifier = Modifier
+                                        .onPointerEvent(PointerEventType.Enter) { viewModel.historySelected = index }
+                                        .onPointerEvent(PointerEventType.Exit) { viewModel.historySelected = -1 }
                                 ) { viewModel.historyClick(topic) }
                             }
                         }
@@ -360,7 +365,10 @@ fun FrameWindowScope.App() {
                                     TopicItem(
                                         topic,
                                         viewModel.repoSelected == index,
-                                        viewModel = viewModel
+                                        viewModel = viewModel,
+                                        modifier = Modifier
+                                            .onPointerEvent(PointerEventType.Enter) { viewModel.repoSelected = index }
+                                            .onPointerEvent(PointerEventType.Exit) { viewModel.repoSelected = -1 }
                                     ) { viewModel.cardClick(topic) }
                                 }
                             }
@@ -387,7 +395,10 @@ fun FrameWindowScope.App() {
                             border = BorderStroke(
                                 width = animateDpAsState(if (viewModel.topicSelected == index) 4.dp else 0.dp).value,
                                 color = animateColorAsState(if (viewModel.topicSelected == index) MaterialBlue else Color.Transparent).value
-                            )
+                            ),
+                            modifier = Modifier
+                                .onPointerEvent(PointerEventType.Enter) { viewModel.topicSelected = index }
+                                .onPointerEvent(PointerEventType.Exit) { viewModel.topicSelected = -1 }
                         ) {
                             ListItem(
                                 text = { Text(topic) },
@@ -440,6 +451,7 @@ fun TopicItem(
     isSelected: Boolean,
     viewModel: TopicViewModel,
     unselectedColor: Color = Color.Transparent,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     Card(
@@ -447,7 +459,8 @@ fun TopicItem(
         border = BorderStroke(
             width = animateDpAsState(if (isSelected) 4.dp else 0.dp).value,
             color = animateColorAsState(if (isSelected) MaterialBlue else unselectedColor).value
-        )
+        ),
+        modifier = modifier
     ) {
         Column(modifier = Modifier.padding(4.dp)) {
             ListItem(
