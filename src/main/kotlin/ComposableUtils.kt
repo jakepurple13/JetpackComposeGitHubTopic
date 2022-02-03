@@ -412,3 +412,41 @@ public val Icons.Filled.History: ImageVector
     }
 
 private var _history: ImageVector? = null
+
+public val Icons.Filled.Minimize: ImageVector
+    get() {
+        if (_minimize != null) {
+            return _minimize!!
+        }
+        _minimize = materialIcon(name = "Filled.Minimize") {
+            materialPath {
+                moveTo(6.0f, 19.0f)
+                horizontalLineToRelative(12.0f)
+                verticalLineToRelative(2.0f)
+                horizontalLineTo(6.0f)
+                close()
+            }
+        }
+        return _minimize!!
+    }
+
+private var _minimize: ImageVector? = null
+
+public val Icons.Filled.Maximize: ImageVector
+    get() {
+        if (_maximize != null) {
+            return _maximize!!
+        }
+        _maximize = materialIcon(name = "Filled.Maximize") {
+            materialPath {
+                moveTo(3.0f, 3.0f)
+                horizontalLineToRelative(18.0f)
+                verticalLineToRelative(2.0f)
+                horizontalLineTo(3.0f)
+                close()
+            }
+        }
+        return _maximize!!
+    }
+
+private var _maximize: ImageVector? = null
