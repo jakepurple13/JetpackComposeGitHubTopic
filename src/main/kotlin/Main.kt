@@ -1,6 +1,7 @@
 // Copyright 2000-2021 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -30,6 +31,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -574,9 +576,19 @@ fun main() = application {
                             }
                         )
                     ) {
+                        val hasFocus = LocalWindowInfo.current.isWindowFocused
+                        val focusedAlpha by animateFloatAsState(if (hasFocus || darkTheme) 1.0f else 0.5f)
+
                         TopAppBar(
                             title = { Text("GitHub Topics") },
-                            backgroundColor = MaterialTheme.colors.surface,
+                            elevation = animateDpAsState(
+                                if (darkTheme) {
+                                    if (hasFocus) 0.dp else AppBarDefaults.TopAppBarElevation
+                                } else {
+                                    if (hasFocus) AppBarDefaults.TopAppBarElevation else 0.dp
+                                }
+                            ).value,
+                            backgroundColor = MaterialTheme.colors.primarySurface.copy(alpha = focusedAlpha),
                             actions = {
                                 IconButton(onClick = ::exitApplication) { Icon(Icons.Default.Close, null) }
                                 IconButton(onClick = { state.isMinimized = true }) { Icon(Icons.Default.Minimize, null) }
