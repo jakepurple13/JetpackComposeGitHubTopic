@@ -122,6 +122,10 @@ class TopicViewModel {
         if (item !in historyTopicList) historyTopicList.add(item)
     }
 
+    fun removeTopicFromHistory(item: GitHubTopic) {
+        historyTopicList.remove(item)
+    }
+
     suspend fun previousTopicSelect(topicState: LazyListState) {
         if (topicsToSearch.isNotEmpty() && topicSelected > -1) {
             topicState.animateScrollToItem(--topicSelected)

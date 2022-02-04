@@ -1,5 +1,5 @@
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.TooltipArea
+import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.forEachGesture
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
@@ -8,13 +8,17 @@ import androidx.compose.material.icons.materialIcon
 import androidx.compose.material.icons.materialPath
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.text.style.TextAlign
@@ -450,3 +454,86 @@ public val Icons.Filled.Maximize: ImageVector
     }
 
 private var _maximize: ImageVector? = null
+
+@Composable
+@ExperimentalFoundationApi
+fun ContextMenuArea(
+    items: () -> List<ContextMenuItem>,
+    state: ContextMenuState = remember { ContextMenuState() },
+    enabled: Boolean = true,
+    content: @Composable () -> Unit
+) {
+    val data = ContextMenuData(items, LocalContextMenuData.current)
+
+    ContextMenuDataProvider(data) {
+        Box(Modifier.contextMenuDetector(state, enabled), propagateMinConstraints = true) {
+            content()
+        }
+        (if (darkTheme) DarkDefaultContextMenuRepresentation else LightDefaultContextMenuRepresentation).Representation(state, data)
+    }
+}
+
+@Composable
+@ExperimentalFoundationApi
+fun ContextMenuDataProvider(
+    items: () -> List<ContextMenuItem>,
+    content: @Composable () -> Unit
+) {
+    ContextMenuDataProvider(
+        ContextMenuData(items, LocalContextMenuData.current),
+        content
+    )
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+internal fun ContextMenuDataProvider(
+    data: ContextMenuData,
+    content: @Composable () -> Unit
+) {
+    CompositionLocalProvider(
+        LocalContextMenuData provides data
+    ) {
+        content()
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+private val LocalContextMenuData = staticCompositionLocalOf<ContextMenuData?> {
+    null
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+private fun Modifier.contextMenuDetector(
+    state: ContextMenuState,
+    enabled: Boolean = true
+): Modifier {
+    return if (
+        enabled && state.status == ContextMenuState.Status.Closed
+    ) {
+        this.pointerInput(state) {
+            forEachGesture {
+                awaitPointerEventScope {
+                    val event = awaitEventFirstDown()
+                    if (event.buttons.isSecondaryPressed) {
+                        event.changes.forEach { it.consumeDownChange() }
+                        state.status =
+                            ContextMenuState.Status.Open(Rect(event.changes[0].position, 0f))
+                    }
+                }
+            }
+        }
+    } else {
+        Modifier
+    }
+}
+
+private suspend fun AwaitPointerEventScope.awaitEventFirstDown(): PointerEvent {
+    var event: PointerEvent
+    do {
+        event = awaitPointerEvent()
+    } while (
+        !event.changes.all { it.changedToDown() }
+    )
+    return event
+}

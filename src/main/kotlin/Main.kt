@@ -29,7 +29,6 @@ import androidx.compose.ui.input.key.KeyShortcut
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.input.ImeAction
@@ -228,30 +227,25 @@ fun FrameWindowScope.App() {
                 LazyColumn(
                     contentPadding = it,
                     verticalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier.padding(horizontal = 4.dp),
+                    modifier = Modifier.padding(4.dp),
                     state = historyState
                 ) {
                     itemsIndexed(viewModel.historyTopicList) { index, topic ->
-                        CustomTooltip(
-                            tooltip = {
-                                // composable tooltip content
-                                Column(modifier = Modifier.padding(10.dp)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Default.Star, null)
-                                        Text(topic.stars.toString())
-                                    }
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Default.Person, null)
-                                        Text(topic.watchers.toString())
-                                    }
-                                }
+                        ContextMenuArea(
+                            items = {
+                                listOf(
+                                    ContextMenuItem("Open") { viewModel.historyClick(topic) },
+                                    ContextMenuItem("Remove") { viewModel.removeTopicFromHistory(topic) },
+                                    ContextMenuItem("Stars: ${topic.stars}") {},
+                                    ContextMenuItem("Watchers: ${topic.watchers}") {}
+                                )
                             }
                         ) {
                             TopicItem(
                                 topic,
                                 viewModel.historySelected == index,
                                 viewModel,
-                                MaterialTheme.colors.primarySurface,
+                                MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium),
                                 modifier = Modifier
                                     .onPointerEvent(PointerEventType.Enter) { viewModel.historySelected = index }
                                     .onPointerEvent(PointerEventType.Exit) { viewModel.historySelected = -1 }
@@ -273,7 +267,7 @@ fun FrameWindowScope.App() {
                             scope.launch {
                                 if (scaffoldState.drawerState.isClosed) scaffoldState.drawerState.open() else scaffoldState.drawerState.close()
                             }
-                        }) { Icon(Icons.Default.History, null) }
+                        }) { Icon(Icons.Default.Menu, null) }
                     }
 
                     CustomTooltip(
@@ -357,43 +351,16 @@ fun FrameWindowScope.App() {
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         itemsIndexed(viewModel.repoList) { index, topic ->
-                            CustomTooltip(
-                                tooltip = {
-                                    // composable tooltip content
-                                    Column(modifier = Modifier.padding(10.dp)) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(Icons.Default.Star, null)
-                                            Text(topic.stars.toString())
-                                        }
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(Icons.Default.Person, null)
-                                            Text(topic.watchers.toString())
-                                        }
-                                    }
+                            ContextMenuArea(
+                                items = {
+                                    listOf(
+                                        ContextMenuItem("Open") { viewModel.cardClick(topic) },
+                                        ContextMenuItem("Add to History") { viewModel.addTopicToHistory(topic) },
+                                        ContextMenuItem("Stars: ${topic.stars}") {},
+                                        ContextMenuItem("Watchers: ${topic.watchers}") {},
+                                    )
                                 }
                             ) {
-
-                                var showDropdownMenu by remember { mutableStateOf(false) }
-
-                                DropdownMenu(
-                                    expanded = showDropdownMenu,
-                                    onDismissRequest = { showDropdownMenu = false },
-                                ) {
-                                    DropdownMenuItem(
-                                        onClick = {
-                                            viewModel.addTopicToHistory(topic)
-                                            showDropdownMenu = false
-                                        }
-                                    ) { Text("Add to History") }
-
-                                    DropdownMenuItem(
-                                        onClick = {
-                                            viewModel.cardClick(topic)
-                                            showDropdownMenu = false
-                                        }
-                                    ) { Text("Open") }
-                                }
-
                                 TopicItem(
                                     topic,
                                     viewModel.repoSelected == index,
@@ -401,9 +368,6 @@ fun FrameWindowScope.App() {
                                     modifier = Modifier
                                         .onPointerEvent(PointerEventType.Enter) { viewModel.repoSelected = index }
                                         .onPointerEvent(PointerEventType.Exit) { viewModel.repoSelected = -1 }
-                                        .onPointerEvent(PointerEventType.Press) { p ->
-                                            if (p.buttons.isSecondaryPressed) showDropdownMenu = true
-                                        }
                                 ) { viewModel.cardClick(topic) }
                             }
                         }
@@ -425,36 +389,25 @@ fun FrameWindowScope.App() {
             ) {
                 stickyHeader { Text("Topics to Search for:") }
                 itemsIndexed(viewModel.topicsToSearch) { index, topic ->
-
-                    var showDropdownMenu by remember { mutableStateOf(false) }
-
-                    DropdownMenu(
-                        expanded = showDropdownMenu,
-                        onDismissRequest = { showDropdownMenu = false },
-                    ) {
-                        DropdownMenuItem(
-                            onClick = {
-                                viewModel.removeTopic(topic)
-                                showDropdownMenu = false
-                            }
-                        ) { Text("Remove") }
-                    }
-
-                    Card(
-                        onClick = { viewModel.removeTopic(topic) },
-                        border = BorderStroke(
-                            width = animateDpAsState(if (viewModel.topicSelected == index) 4.dp else 0.dp).value,
-                            color = animateColorAsState(if (viewModel.topicSelected == index) MaterialBlue else Color.Transparent).value
-                        ),
-                        modifier = Modifier
-                            .onPointerEvent(PointerEventType.Enter) { viewModel.topicSelected = index }
-                            .onPointerEvent(PointerEventType.Exit) { viewModel.topicSelected = -1 }
-                            .onPointerEvent(PointerEventType.Press) { p -> if (p.buttons.isSecondaryPressed) showDropdownMenu = true }
-                    ) {
-                        ListItem(
-                            text = { Text(topic) },
-                            icon = { Icon(Icons.Default.Clear, null) }
-                        )
+                    ContextMenuArea(items = { listOf(ContextMenuItem("Remove") { viewModel.removeTopic(topic) }) }) {
+                        Card(
+                            onClick = { viewModel.removeTopic(topic) },
+                            border = BorderStroke(
+                                width = animateDpAsState(if (viewModel.topicSelected == index) 4.dp else 0.dp).value,
+                                color = animateColorAsState(
+                                    if (viewModel.topicSelected == index) MaterialBlue
+                                    else MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium)
+                                ).value
+                            ),
+                            modifier = Modifier
+                                .onPointerEvent(PointerEventType.Enter) { viewModel.topicSelected = index }
+                                .onPointerEvent(PointerEventType.Exit) { viewModel.topicSelected = -1 }
+                        ) {
+                            ListItem(
+                                text = { Text(topic) },
+                                icon = { Icon(Icons.Default.Clear, null) }
+                            )
+                        }
                     }
                 }
             }
@@ -479,7 +432,7 @@ fun TopicItem(
     item: GitHubTopic,
     isSelected: Boolean,
     viewModel: TopicViewModel,
-    unselectedColor: Color = Color.Transparent,
+    unselectedColor: Color = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium),
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
@@ -545,11 +498,17 @@ fun TopicItem(
 }
 
 var showIcon by mutableStateOf(false)
-var darkTheme by mutableStateOf(true)
+var darkTheme by mutableStateOf(false)
+
+@Composable
+fun InitialSetup() {
+    val isSystemDark = isSystemInDarkTheme()
+    LaunchedEffect(Unit) { darkTheme = isSystemDark }
+}
 
 @OptIn(ExperimentalFoundationApi::class)
 fun main() = application {
-
+    InitialSetup()
     val state = rememberWindowState()
 
     Window(
