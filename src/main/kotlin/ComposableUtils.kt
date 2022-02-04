@@ -27,14 +27,17 @@ import kotlin.math.max
 
 val MaterialBlue = Color(0xFF1976d2)
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun CustomChip(
     category: String,
     modifier: Modifier = Modifier,
     textColor: Color = MaterialTheme.colors.onSurface,
-    backgroundColor: Color = MaterialTheme.colors.surface
+    backgroundColor: Color = MaterialTheme.colors.surface,
+    onClick: () -> Unit = {}
 ) {
     Surface(
+        onClick = onClick,
         modifier = Modifier.then(modifier),
         elevation = 8.dp,
         shape = RoundedCornerShape(16.dp),

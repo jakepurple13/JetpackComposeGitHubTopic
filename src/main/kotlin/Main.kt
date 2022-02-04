@@ -473,9 +473,7 @@ fun TopicItem(
                 item.topics.forEach {
                     CustomChip(
                         it,
-                        modifier = Modifier
-                            .clickable { viewModel.toggleTopic(it) }
-                            .padding(2.dp),
+                        modifier = Modifier.padding(2.dp),
                         textColor = animateColorAsState(
                             if (viewModel.topicsToSearch.any { t -> t.equals(it, true) }) MaterialTheme.colors.onPrimary
                             else MaterialTheme.colors.onSurface
@@ -484,7 +482,7 @@ fun TopicItem(
                             if (viewModel.topicsToSearch.any { t -> t.equals(it, true) }) MaterialBlue
                             else MaterialTheme.colors.surface
                         ).value
-                    )
+                    ) { viewModel.toggleTopic(it) }
                 }
             }
 
