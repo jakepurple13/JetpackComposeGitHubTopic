@@ -5,14 +5,20 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.jetbrains.exposed.sql.Transaction
+import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.statements.StatementInterceptor
+import org.jetbrains.exposed.sql.transactions.transaction
 import java.awt.Desktop
 import java.net.URI
+import java.time.Instant
 
 class TopicViewModel {
 
     var text by mutableStateOf("")
     var repoList by mutableStateOf(emptyList<GitHubTopic>())
-    val historyTopicList = mutableStateListOf<GitHubTopic>()
+    var historyDBList by mutableStateOf<List<GitHubTopic>>(emptyList())
+        private set
     val topicsToSearch = mutableStateListOf<String>()
 
     var page by mutableStateOf(1)
@@ -105,7 +111,7 @@ class TopicViewModel {
 
     fun cardClick(item: GitHubTopic) {
         Desktop.getDesktop().browse(URI.create(item.url))
-        if (item !in historyTopicList) historyTopicList.add(item)
+        addTopicToHistory(item)
     }
 
     fun historyClick(item: GitHubTopic) {
@@ -118,12 +124,51 @@ class TopicViewModel {
         }
     }
 
+    private fun Transaction.updateHistory() {
+        registerInterceptor(object : StatementInterceptor {
+            override fun afterCommit() {
+                println("afterCommit")
+                transaction(DbProperties.db) { historyDBList = TopicDao.all().mapToGitHubTopic() }
+            }
+        })
+    }
+
     fun addTopicToHistory(item: GitHubTopic) {
-        if (item !in historyTopicList) historyTopicList.add(item)
+        if (item !in historyDBList) {
+            //historyTopicList.add(item)
+            transaction(DbProperties.db) {
+                updateHistory()
+                TopicDao.new {
+                    name = item.name
+                    link = item.url
+                    description = item.description
+                    createdAt = Instant.parse(item.createdAt)
+                    updatedAt = Instant.parse(item.updatedAt)
+                    pushedAt = Instant.parse(item.pushedAt)
+                    image = item.avatarUrl
+                    topics = item.topics
+                    watchers = item.watchers
+                    stars = item.stars
+                }
+            }
+        }
     }
 
     fun removeTopicFromHistory(item: GitHubTopic) {
-        historyTopicList.remove(item)
+        //historyTopicList.remove(item)
+        transaction(DbProperties.db) {
+            updateHistory()
+            Topic.deleteWhere { Topic.link eq item.url }
+        }
+    }
+
+    fun removeSelectedTopicFromHistory() {
+        if (historyDBList.isNotEmpty() && historySelected in 0..historyDBList.lastIndex) {
+            historyDBList.getOrNull(historySelected)?.let { removeTopicFromHistory(it) }
+            if (historySelected == historyDBList.size) {
+                historySelected = historyDBList.lastIndex
+            }
+        }
     }
 
     suspend fun previousTopicSelect(topicState: LazyListState) {
@@ -194,26 +239,26 @@ class TopicViewModel {
                 if (url.isNotEmpty()) {
                     Desktop.getDesktop().browse(URI(url))
                 }
-                if (it !in historyTopicList) historyTopicList.add(it)
+                addTopicToHistory(it)
             }
         }
     }
 
     suspend fun previousHistorySelect(historyState: LazyListState) {
-        if (historyTopicList.isNotEmpty() && historySelected > -1) {
+        if (historyDBList.isNotEmpty() && historySelected > -1) {
             historyState.animateScrollToItem(--historySelected)
         }
     }
 
     suspend fun nextHistorySelect(historyState: LazyListState) {
-        if (historyTopicList.isNotEmpty() && historySelected < historyTopicList.lastIndex) {
+        if (historyDBList.isNotEmpty() && historySelected < historyDBList.lastIndex) {
             historyState.animateScrollToItem(++historySelected)
         }
     }
 
     fun openSelectedHistory() {
-        if (historyTopicList.isNotEmpty() && historySelected in 0..historyTopicList.lastIndex) {
-            historyTopicList.getOrNull(historySelected)?.let {
+        if (historyDBList.isNotEmpty() && historySelected in 0..historyDBList.lastIndex) {
+            historyDBList.getOrNull(historySelected)?.let {
                 val url = it.url
                 if (url.isNotEmpty()) {
                     Desktop.getDesktop().browse(URI(url))
@@ -223,17 +268,21 @@ class TopicViewModel {
     }
 
     suspend fun scrollToTopHistory(historyState: LazyListState) {
-        if (historyTopicList.isNotEmpty()) {
+        if (historyDBList.isNotEmpty()) {
             historySelected = 0
             historyState.animateScrollToItem(0)
         }
     }
 
     suspend fun scrollToBottomHistory(historyState: LazyListState) {
-        if (historyTopicList.isNotEmpty()) {
-            historySelected = historyTopicList.lastIndex
+        if (historyDBList.isNotEmpty()) {
+            historySelected = historyDBList.lastIndex
             historyState.animateScrollToItem(historySelected)
         }
+    }
+
+    init {
+        transaction(DbProperties.db) { historyDBList = TopicDao.all().mapToGitHubTopic() }
     }
 
 }

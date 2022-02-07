@@ -191,9 +191,14 @@ fun FrameWindowScope.App() {
             Separator()
             Item(
                 "Open",
-                enabled = viewModel.historyTopicList.isNotEmpty() && viewModel.historySelected in 0..viewModel.historyTopicList.lastIndex,
+                enabled = viewModel.historyDBList.isNotEmpty() && viewModel.historySelected in 0..viewModel.historyDBList.lastIndex,
                 onClick = { viewModel.openSelectedHistory() },
                 shortcut = KeyShortcut(Key.O, meta = true, alt = true, shift = true)
+            )
+            Item(
+                "Delete",
+                onClick = { viewModel.removeSelectedTopicFromHistory() },
+                shortcut = KeyShortcut(Key.Delete, meta = true, shift = true, alt = true)
             )
         }
 
@@ -230,7 +235,7 @@ fun FrameWindowScope.App() {
                     modifier = Modifier.padding(4.dp),
                     state = historyState
                 ) {
-                    itemsIndexed(viewModel.historyTopicList) { index, topic ->
+                    itemsIndexed(viewModel.historyDBList) { index, topic ->
                         ContextMenuArea(
                             items = {
                                 listOf(
@@ -501,7 +506,10 @@ var darkTheme by mutableStateOf(false)
 @Composable
 fun InitialSetup() {
     val isSystemDark = isSystemInDarkTheme()
-    LaunchedEffect(Unit) { darkTheme = isSystemDark }
+    LaunchedEffect(Unit) {
+        darkTheme = isSystemDark
+        dbInit()
+    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
