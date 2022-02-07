@@ -467,7 +467,7 @@ fun TopicItem(
                 } else null,
                 overlineText = {
                     Text(
-                        item.url,
+                        item.fullName,
                         textDecoration = TextDecoration.Underline,
                         color = MaterialBlue
                     )

@@ -6,6 +6,7 @@ import java.net.URL
 data class GitHubTopic(
     val url: String,
     val name: String,
+    val fullName: String,
     val description: String,
     val updatedAt: String,
     val pushedAt: String,
@@ -38,6 +39,7 @@ fun getTopics(searching: () -> Unit, done: () -> Unit, vararg topics: String): L
         GitHubTopic(
             url = item.getString("html_url"),
             name = item.getString("name"),
+            fullName = item.getString("full_name"),
             description = try {
                 item.getString("description")
             } catch (e: JSONException) {
@@ -74,6 +76,7 @@ fun getTopics2(searching: () -> Unit, done: () -> Unit, page: Int, vararg topics
         GitHubTopic(
             url = item.getString("html_url"),
             name = item.getString("name"),
+            fullName = item.getString("full_name"),
             description = try {
                 item.getString("description")
             } catch (e: JSONException) {

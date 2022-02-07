@@ -135,11 +135,11 @@ class TopicViewModel {
 
     fun addTopicToHistory(item: GitHubTopic) {
         if (item !in historyDBList) {
-            //historyTopicList.add(item)
             transaction(DbProperties.db) {
                 updateHistory()
                 TopicDao.new {
                     name = item.name
+                    fullName = item.fullName
                     link = item.url
                     description = item.description
                     createdAt = Instant.parse(item.createdAt)
@@ -155,7 +155,6 @@ class TopicViewModel {
     }
 
     fun removeTopicFromHistory(item: GitHubTopic) {
-        //historyTopicList.remove(item)
         transaction(DbProperties.db) {
             updateHistory()
             Topic.deleteWhere { Topic.link eq item.url }
