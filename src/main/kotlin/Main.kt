@@ -1,4 +1,5 @@
 // Copyright 2000-2021 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
+
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -37,10 +38,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
 import kotlinx.coroutines.launch
 import org.ocpsoft.prettytime.PrettyTime
+import java.awt.Toolkit
+import java.awt.datatransfer.StringSelection
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.ZoneId
 import java.util.*
+
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
@@ -224,6 +228,7 @@ fun FrameWindowScope.App() {
                     TopAppBar(
                         title = { Text("History") },
                         actions = {
+                            Text("${viewModel.historyDBList.size}")
                             IconButton(onClick = { scope.launch { scaffoldState.drawerState.close() } }) { Icon(Icons.Default.Close, null) }
                         }
                     )
@@ -241,6 +246,9 @@ fun FrameWindowScope.App() {
                                 listOf(
                                     ContextMenuItem("Open") { viewModel.historyClick(topic) },
                                     ContextMenuItem("Remove") { viewModel.removeTopicFromHistory(topic) },
+                                    ContextMenuItem("Copy Url") {
+                                        Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(topic.url), null)
+                                    },
                                     ContextMenuItem("Stars: ${topic.stars}") {},
                                     ContextMenuItem("Watchers: ${topic.watchers}") {}
                                 )
@@ -369,6 +377,9 @@ fun FrameWindowScope.App() {
                                     listOf(
                                         ContextMenuItem("Open") { viewModel.cardClick(topic) },
                                         ContextMenuItem("Add to History") { viewModel.addTopicToHistory(topic) },
+                                        ContextMenuItem("Copy Url") {
+                                            Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(topic.url), null)
+                                        },
                                         ContextMenuItem("Stars: ${topic.stars}") {},
                                         ContextMenuItem("Watchers: ${topic.watchers}") {},
                                     )
