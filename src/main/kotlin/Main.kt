@@ -263,18 +263,16 @@ fun FrameWindowScope.App() {
         topBar = {
             TopAppBar(
                 title = { Text("Topics") },
-                actions = {
-
-                    CustomTooltip(
-                        tooltip = { Box(Modifier.padding(10.dp)) { Text("History (Cmd+Alt+Shift+H)") } },
-                    ) {
+                navigationIcon = {
+                    CustomTooltip(tooltip = { Box(Modifier.padding(10.dp)) { Text("History (Cmd+Alt+Shift+H)") } }) {
                         IconButton(onClick = {
                             scope.launch {
                                 if (scaffoldState.drawerState.isClosed) scaffoldState.drawerState.open() else scaffoldState.drawerState.close()
                             }
                         }) { Icon(Icons.Default.Menu, null) }
                     }
-
+                },
+                actions = {
                     CustomTooltip(
                         tooltip = { Box(Modifier.padding(10.dp)) { Text("Refresh (Cmd+R)") } },
                     ) { IconButton(onClick = { scope.launch { viewModel.refresh(state) } }) { Icon(Icons.Default.Refresh, null) } }
@@ -298,6 +296,16 @@ fun FrameWindowScope.App() {
                     value = viewModel.text,
                     onValueChange = { viewModel.text = it },
                     singleLine = true,
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        focusedBorderColor = if (darkTheme) MaterialTheme.colors.primary.copy(alpha = ContentAlpha.high)
+                        else MaterialTheme.colors.onPrimary.copy(alpha = ContentAlpha.medium),
+                        focusedLabelColor = if (darkTheme) MaterialTheme.colors.primary.copy(alpha = ContentAlpha.high)
+                        else MaterialTheme.colors.onPrimary.copy(alpha = ContentAlpha.medium),
+                        trailingIconColor = if (darkTheme) MaterialTheme.colors.onSurface.copy(alpha = TextFieldDefaults.IconOpacity)
+                        else MaterialTheme.colors.onPrimary.copy(alpha = TextFieldDefaults.IconOpacity),
+                        placeholderColor = if (darkTheme) MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium)
+                        else MaterialTheme.colors.onPrimary.copy(alpha = ContentAlpha.medium)
+                    ),
                     shape = MaterialTheme.shapes.medium,
                     label = { Text("Add Topic") },
                     placeholder = { Text("Press Enter to Add Topic") },
@@ -407,6 +415,7 @@ fun FrameWindowScope.App() {
                             modifier = Modifier
                                 .onPointerEvent(PointerEventType.Enter) { viewModel.topicSelected = index }
                                 .onPointerEvent(PointerEventType.Exit) { viewModel.topicSelected = -1 }
+                                .cursorForSelectable()
                         ) {
                             ListItem(
                                 text = { Text(topic) },
@@ -447,7 +456,7 @@ fun TopicItem(
             width = animateDpAsState(if (isSelected) 4.dp else 0.dp).value,
             color = animateColorAsState(if (isSelected) MaterialBlue else unselectedColor).value
         ),
-        modifier = modifier
+        modifier = modifier.cursorForSelectable()
     ) {
         Column(modifier = Modifier.padding(4.dp)) {
             ListItem(

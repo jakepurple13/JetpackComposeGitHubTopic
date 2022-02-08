@@ -11,6 +11,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Rect
@@ -23,6 +24,7 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
+import java.awt.Cursor
 import kotlin.math.max
 
 val MaterialBlue = Color(0xFF1976d2)
@@ -540,3 +542,6 @@ private suspend fun AwaitPointerEventScope.awaitEventFirstDown(): PointerEvent {
     )
     return event
 }
+
+@OptIn(ExperimentalComposeUiApi::class)
+fun Modifier.cursorForSelectable(): Modifier = pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR)))
