@@ -18,7 +18,7 @@ fun dbInit() {
 object DbProperties {
     val db by lazy {
         TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_SERIALIZABLE
-        Database.connect("jdbc:h2:./myh2file2", "org.h2.Driver")
+        Database.connect("jdbc:h2:./myh2file", "org.h2.Driver")
     }
 }
 
@@ -34,6 +34,7 @@ object Topic : IntIdTable() {
     val pushedAt = timestamp("pushedAt")
     val createdAt = timestamp("createdAt")
     val topics = text("topics")
+    val language = text("language")
 }
 
 class TopicDao(id: EntityID<Int>) : IntEntity(id) {
@@ -48,6 +49,7 @@ class TopicDao(id: EntityID<Int>) : IntEntity(id) {
     var link by Topic.link
     var stars by Topic.stars
     var watchers by Topic.watchers
+    var language by Topic.language
     var updatedAt by Topic.updatedAt
     var pushedAt by Topic.pushedAt
     var createdAt by Topic.createdAt
@@ -70,6 +72,7 @@ fun SizedIterable<TopicDao>.mapToGitHubTopic() = map {
         stars = it.stars,
         watchers = it.watchers,
         avatarUrl = it.image,
+        language = it.language
     )
 }
 

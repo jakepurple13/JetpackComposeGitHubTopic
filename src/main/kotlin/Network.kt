@@ -13,6 +13,7 @@ data class GitHubTopic(
     val createdAt: String,
     val stars: Int,
     val watchers: Int,
+    val language: String,
     val avatarUrl: String? = null,
     val topics: List<String> = emptyList()
 )
@@ -50,6 +51,7 @@ fun getTopics(searching: () -> Unit, done: () -> Unit, vararg topics: String): L
             createdAt = item.getString("created_at"),
             stars = item.getInt("stargazers_count"),
             watchers = item.getInt("watchers_count"),
+            language = item.getString("language"),
         )
     }
     done()
@@ -87,6 +89,11 @@ fun getTopics2(searching: () -> Unit, done: () -> Unit, page: Int, vararg topics
             createdAt = item.getString("created_at"),
             stars = item.getInt("stargazers_count"),
             watchers = item.getInt("watchers_count"),
+            language = try {
+                item.getString("language")
+            } catch (e: JSONException) {
+                "No language"
+            },
             avatarUrl = try {
                 item
                     .getJSONObject("owner")

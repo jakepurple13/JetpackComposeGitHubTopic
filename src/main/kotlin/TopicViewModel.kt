@@ -127,7 +127,6 @@ class TopicViewModel {
     private fun Transaction.updateHistory() {
         registerInterceptor(object : StatementInterceptor {
             override fun afterCommit() {
-                println("afterCommit")
                 transaction(DbProperties.db) { historyDBList = TopicDao.all().mapToGitHubTopic() }
             }
         })
@@ -149,6 +148,7 @@ class TopicViewModel {
                     topics = item.topics
                     watchers = item.watchers
                     stars = item.stars
+                    language = item.language
                 }
             }
         }

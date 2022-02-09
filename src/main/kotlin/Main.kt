@@ -33,6 +33,7 @@ import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.*
@@ -511,11 +512,25 @@ fun TopicItem(
                 }
             }
 
-            Text(
-                text = "Updated ${formatTimestamp(item.pushedAt)}",
-                style = MaterialTheme.typography.caption,
-                modifier = Modifier.padding(4.dp)
-            )
+            Row {
+                Text(
+                    text = "Updated ${formatTimestamp(item.pushedAt)}",
+                    style = MaterialTheme.typography.caption,
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .weight(1f)
+                )
+
+                Text(
+                    text = item.language,
+                    style = MaterialTheme.typography.caption,
+                    textAlign = TextAlign.End,
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .weight(1f)
+                )
+            }
         }
     }
 }
