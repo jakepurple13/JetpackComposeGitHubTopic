@@ -369,7 +369,7 @@ fun FrameWindowScope.App() {
                         modifier = Modifier
                             .padding(8.dp)
                             .align(Alignment.Center),
-                        color = Color.Cyan
+                        color = MaterialTheme.colors.primary
                     )
                 } else {
                     LazyColumn(
@@ -419,7 +419,15 @@ fun FrameWindowScope.App() {
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 state = topicState,
             ) {
-                stickyHeader { Text("Topics to Search for:") }
+                stickyHeader {
+                    Text(
+                        "Topics to Search for:",
+                        modifier = Modifier
+                            .background(MaterialTheme.colors.surface)
+                            .padding(4.dp)
+                            .fillMaxWidth()
+                    )
+                }
                 itemsIndexed(viewModel.topicsToSearch) { index, topic ->
                     ContextMenuArea(items = { listOf(ContextMenuItem("Remove") { viewModel.removeTopic(topic) }) }) {
                         Card(
