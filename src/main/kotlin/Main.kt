@@ -299,6 +299,13 @@ fun FrameWindowScope.App() {
                 }
             )
         },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { scope.launch { viewModel.scrollToTopRepo(state) } },
+                backgroundColor = MaterialTheme.colors.primary,
+            ) { Icon(Icons.Default.KeyboardArrowUp, null) }
+        },
+        floatingActionButtonPosition = FabPosition.End,
         bottomBar = {
             CustomBottomAppBar {
                 OutlinedTextField(
