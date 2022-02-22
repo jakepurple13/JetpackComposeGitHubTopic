@@ -6,19 +6,28 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SizedIterable
 import org.jetbrains.exposed.sql.javatime.timestamp
-import org.jetbrains.exposed.sql.statements.StatementInterceptor
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
+import java.io.File
 import java.sql.Connection
 
 fun dbInit() {
     transaction(DbProperties.db) { SchemaUtils.create(Topic) }
 }
 
+val FILE_SEPERATOR = File.separator
+
 object DbProperties {
     val db by lazy {
         TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_SERIALIZABLE
-        Database.connect("jdbc:h2:./myh2file", "org.h2.Driver")
+        //Database.connect("jdbc:h2:./myh2file", "org.h2.Driver")
+        //Database.connect("jdbc:h2:mem:regular", "org.h2.Driver")
+        //Database.connect("jdbc:sqlite:file:test?mode=memory&cache=shared", "org.sqlite.JDBC")
+        //Database.connect("jdbc:h2:mem:test", driver = "org.h2.Driver")
+        //Database.connect("jdbc:sqlite:./data.db", "org.sqlite.JDBC")
+        val f = "${System.getProperty("user.home")}${FILE_SEPERATOR}Desktop${FILE_SEPERATOR}githubtopics.db"
+        Database.connect("jdbc:sqlite:$f", "org.sqlite.JDBC")
+        //Database.connect("jdbc:h2:$f", "org.h2.Driver")
     }
 }
 
@@ -74,15 +83,4 @@ fun SizedIterable<TopicDao>.mapToGitHubTopic() = map {
         avatarUrl = it.image,
         language = it.language
     )
-}
-
-fun asdf() {
-    val topics = transaction(DbProperties.db) {
-        TopicDao.all().mapToGitHubTopic()
-        registerInterceptor(object : StatementInterceptor {
-            override fun afterCommit() {
-                super.afterCommit()
-            }
-        })
-    }
 }

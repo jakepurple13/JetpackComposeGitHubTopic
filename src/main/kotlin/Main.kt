@@ -567,6 +567,8 @@ fun main() = application {
     InitialSetup()
     val state = rememberWindowState()
 
+    var showKeyboard by remember { mutableStateOf(false) }
+
     Window(
         state = state,
         onCloseRequest = ::exitApplication,
@@ -605,6 +607,8 @@ fun main() = application {
                             ).value,
                             backgroundColor = MaterialTheme.colors.primarySurface.copy(alpha = focusedAlpha),
                             actions = {
+                                IconButton(onClick = { showKeyboard = true }) { Icon(Icons.Default.Settings, null) }
+
                                 IconButton(onClick = ::exitApplication) { Icon(Icons.Default.Close, null) }
                                 IconButton(onClick = { state.isMinimized = true }) { Icon(Icons.Default.Minimize, null) }
                                 IconButton(
@@ -622,6 +626,12 @@ fun main() = application {
                     App()
                 }
             }
+        }
+    }
+
+    if (showKeyboard) {
+        KeyboardView({ showKeyboard = false }) {
+
         }
     }
 }
