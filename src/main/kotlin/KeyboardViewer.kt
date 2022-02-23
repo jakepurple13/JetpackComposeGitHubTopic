@@ -115,10 +115,19 @@ inline fun <reified T> String?.fromJson(): T? = try {
 
 fun Any?.toJson(): String = Gson().toJson(this)
 
+@OptIn(ExperimentalComposeUiApi::class)
 fun List<Key>.anyMeta() = any { it == Key.MetaLeft || it == Key.MetaRight }
+
+@OptIn(ExperimentalComposeUiApi::class)
 fun List<Key>.anyCtrl() = any { it == Key.CtrlLeft || it == Key.CtrlRight }
+
+@OptIn(ExperimentalComposeUiApi::class)
 fun List<Key>.anyAlt() = any { it == Key.AltLeft || it == Key.AltRight }
+
+@OptIn(ExperimentalComposeUiApi::class)
 fun List<Key>.anyShift() = any { it == Key.ShiftLeft || it == Key.ShiftRight }
+
+@OptIn(ExperimentalComposeUiApi::class)
 fun List<Key>.filterOutModifiers() = filterNot {
     it in listOf(Key.MetaLeft, Key.MetaRight, Key.CtrlLeft, Key.CtrlRight, Key.AltLeft, Key.AltRight, Key.ShiftLeft, Key.ShiftRight)
 }

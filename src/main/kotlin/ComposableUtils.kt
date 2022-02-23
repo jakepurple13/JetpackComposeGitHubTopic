@@ -555,40 +555,43 @@ fun Modifier.cursorForSelectable(): Modifier = pointerHoverIcon(PointerIcon(Curs
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun FrameWindowScope.WindowHeader(state: WindowState, title: @Composable () -> Unit, onCloseRequest: () -> Unit) {
-    WindowDraggableArea(
-        modifier = Modifier.combinedClickable(
-            indication = null,
-            interactionSource = remember { MutableInteractionSource() },
-            onClick = {},
-            onDoubleClick = {
-                state.placement = if (state.placement != WindowPlacement.Maximized) {
-                    WindowPlacement.Maximized
-                } else {
-                    WindowPlacement.Floating
-                }
-            }
-        )
-    ) {
-        val hasFocus = LocalWindowInfo.current.isWindowFocused
-        val focusedAlpha by animateFloatAsState(if (hasFocus) 1.0f else 0.5f)
-
-        TopAppBar(
-            title = title,
-            elevation = animateDpAsState(if (hasFocus) AppBarDefaults.TopAppBarElevation else 0.dp).value,
-            backgroundColor = MaterialTheme.colors.primarySurface.copy(alpha = focusedAlpha),
-            actions = {
-                IconButton(onClick = onCloseRequest) { Icon(Icons.Default.Close, null) }
-                IconButton(onClick = { state.isMinimized = true }) { Icon(Icons.Default.Minimize, null) }
-                IconButton(
-                    onClick = {
-                        state.placement = if (state.placement != WindowPlacement.Maximized) {
-                            WindowPlacement.Maximized
-                        } else {
-                            WindowPlacement.Floating
-                        }
+    Column {
+        WindowDraggableArea(
+            modifier = Modifier.combinedClickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+                onClick = {},
+                onDoubleClick = {
+                    state.placement = if (state.placement != WindowPlacement.Maximized) {
+                        WindowPlacement.Maximized
+                    } else {
+                        WindowPlacement.Floating
                     }
-                ) { Icon(Icons.Default.Maximize, null) }
-            }
-        )
+                }
+            )
+        ) {
+            val hasFocus = LocalWindowInfo.current.isWindowFocused
+            val focusedAlpha by animateFloatAsState(if (hasFocus) 1.0f else 0.5f)
+
+            TopAppBar(
+                title = title,
+                elevation = animateDpAsState(if (hasFocus) AppBarDefaults.TopAppBarElevation else 0.dp).value,
+                backgroundColor = MaterialTheme.colors.primarySurface.copy(alpha = focusedAlpha),
+                actions = {
+                    IconButton(onClick = onCloseRequest) { Icon(Icons.Default.Close, null) }
+                    IconButton(onClick = { state.isMinimized = true }) { Icon(Icons.Default.Minimize, null) }
+                    IconButton(
+                        onClick = {
+                            state.placement = if (state.placement != WindowPlacement.Maximized) {
+                                WindowPlacement.Maximized
+                            } else {
+                                WindowPlacement.Floating
+                            }
+                        }
+                    ) { Icon(Icons.Default.Maximize, null) }
+                }
+            )
+        }
+        Divider(color = MaterialTheme.colors.onSurface)
     }
 }

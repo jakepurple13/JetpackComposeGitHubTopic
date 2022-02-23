@@ -596,21 +596,14 @@ fun main() = application {
                         )
                     ) {
                         val hasFocus = LocalWindowInfo.current.isWindowFocused
-                        val focusedAlpha by animateFloatAsState(if (hasFocus || darkTheme) 1.0f else 0.5f)
+                        val focusedAlpha by animateFloatAsState(if (hasFocus) 1.0f else 0.5f)
 
                         TopAppBar(
                             title = { Text("GitHub Topics") },
-                            elevation = animateDpAsState(
-                                if (darkTheme) {
-                                    if (hasFocus) 0.dp else AppBarDefaults.TopAppBarElevation
-                                } else {
-                                    if (hasFocus) AppBarDefaults.TopAppBarElevation else 0.dp
-                                }
-                            ).value,
+                            elevation = animateDpAsState(if (hasFocus) AppBarDefaults.TopAppBarElevation else 0.dp).value,
                             backgroundColor = MaterialTheme.colors.primarySurface.copy(alpha = focusedAlpha),
                             actions = {
                                 IconButton(onClick = { showKeyboard = true }) { Icon(Icons.Default.Settings, null) }
-
                                 IconButton(onClick = ::exitApplication) { Icon(Icons.Default.Close, null) }
                                 IconButton(onClick = { state.isMinimized = true }) { Icon(Icons.Default.Minimize, null) }
                                 IconButton(
@@ -625,6 +618,7 @@ fun main() = application {
                             }
                         )
                     }
+                    Divider(color = MaterialTheme.colors.onSurface)
                     App()
                 }
             }
