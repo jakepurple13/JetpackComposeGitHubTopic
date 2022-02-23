@@ -25,10 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.painter.BitmapPainter
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyShortcut
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -67,14 +64,6 @@ fun FrameWindowScope.App() {
             confirmButton = { Button(onClick = { viewModel.isAskingToClose = false }) { Text("Close") } },
             dialogProvider = PopupAlertDialogProvider
         )
-    }
-
-    fun List<Key>.anyMeta() = any { it == Key.MetaLeft || it == Key.MetaRight }
-    fun List<Key>.anyCtrl() = any { it == Key.CtrlLeft || it == Key.CtrlRight }
-    fun List<Key>.anyAlt() = any { it == Key.AltLeft || it == Key.AltRight }
-    fun List<Key>.anyShift() = any { it == Key.ShiftLeft || it == Key.ShiftRight }
-    fun List<Key>.filterOutModifiers() = filterNot {
-        it in listOf(Key.MetaLeft, Key.MetaRight, Key.CtrlLeft, Key.CtrlRight, Key.AltLeft, Key.AltRight, Key.ShiftLeft, Key.ShiftRight)
     }
 
     MenuBar {
@@ -154,18 +143,18 @@ fun FrameWindowScope.App() {
             Item(
                 "Refresh",
                 onClick = { scope.launch { viewModel.refresh(state) } },
-                shortcut = KeyShortcut(Key.R, meta = true)
+                shortcut = Shortcuts.Refresh.keyShortcut()
             )
             Separator()
             Item(
                 "Previous Page",
                 onClick = { scope.launch { viewModel.previousPage(state) } },
-                shortcut = KeyShortcut(Key.LeftBracket, meta = true)
+                shortcut = Shortcuts.PreviousPage.keyShortcut()
             )
             Item(
                 "Next Page",
                 onClick = { scope.launch { viewModel.nextPage(state) } },
-                shortcut = KeyShortcut(Key.RightBracket, meta = true)
+                shortcut = Shortcuts.NextPage.keyShortcut()
             )
         }
 
@@ -178,40 +167,40 @@ fun FrameWindowScope.App() {
                         if (scaffoldState.drawerState.isClosed) scaffoldState.drawerState.open() else scaffoldState.drawerState.close()
                     }
                 },
-                shortcut = KeyShortcut(Key.H, meta = true, alt = true, shift = true)
+                shortcut = Shortcuts.OpenCloseHistory.keyShortcut()
             )
 
             Item(
                 "Previous",
                 onClick = { scope.launch { viewModel.previousHistorySelect(historyState) } },
-                shortcut = KeyShortcut(Key.PageUp, meta = true, alt = true, shift = true)
+                shortcut = Shortcuts.PreviousHistory.keyShortcut()
             )
             Item(
                 "Next",
                 onClick = { scope.launch { viewModel.nextHistorySelect(historyState) } },
-                shortcut = KeyShortcut(Key.PageDown, meta = true, alt = true, shift = true)
+                shortcut = Shortcuts.NextHistory.keyShortcut()
             )
             Item(
                 "Scroll to top",
                 onClick = { scope.launch { viewModel.scrollToTopHistory(historyState) } },
-                shortcut = KeyShortcut(Key.MoveHome, meta = true, alt = true, shift = true)
+                shortcut = Shortcuts.ScrollToTopHistory.keyShortcut()
             )
             Item(
                 "Scroll to bottom",
                 onClick = { scope.launch { viewModel.scrollToBottomHistory(historyState) } },
-                shortcut = KeyShortcut(Key.MoveEnd, meta = true, alt = true, shift = true)
+                shortcut = Shortcuts.ScrollToBottomHistory.keyShortcut()
             )
             Separator()
             Item(
                 "Open",
                 enabled = viewModel.historyDBList.isNotEmpty() && viewModel.historySelected in 0..viewModel.historyDBList.lastIndex,
                 onClick = { viewModel.openSelectedHistory() },
-                shortcut = KeyShortcut(Key.O, meta = true, alt = true, shift = true)
+                shortcut = Shortcuts.OpenHistory.keyShortcut()
             )
             Item(
                 "Delete",
                 onClick = { viewModel.removeSelectedTopicFromHistory() },
-                shortcut = KeyShortcut(Key.Delete, meta = true, shift = true, alt = true)
+                shortcut = Shortcuts.DeleteHistory.keyShortcut()
             )
         }
 
@@ -352,9 +341,14 @@ fun FrameWindowScope.App() {
                         .padding(bottom = 6.dp)
                         .fillMaxWidth()
                         .onPreviewKeyEvent {
+                            val topic = Shortcuts.AddTopic
                             when {
                                 // Add to search list
-                                it.key == Key.Enter -> {
+                                it.key in topic.keys.filterOutModifiers() &&
+                                        it.isMetaPressed == topic.keys.anyMeta() &&
+                                        it.isShiftPressed == topic.keys.anyShift() &&
+                                        it.isAltPressed == topic.keys.anyAlt() &&
+                                        it.isCtrlPressed == topic.keys.anyCtrl() -> {
                                     viewModel.onTopicAdd()
                                     true
                                 }

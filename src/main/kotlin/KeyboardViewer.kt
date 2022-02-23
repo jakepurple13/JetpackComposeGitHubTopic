@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalComposeUiApi::class)
+@file:OptIn(ExperimentalComposeUiApi::class, ExperimentalComposeUiApi::class)
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -30,15 +30,20 @@ import java.util.prefs.Preferences
 sealed class Shortcuts(val defaultKeys: List<Key>, private val visibleText: String) {
 
     var keys by mutableStateOf(defaultKeys)
-    val name = this::class.simpleName ?: this::class.java.name
+    val name: String = this::class.simpleName ?: this::class.java.name
 
     init {
         val preferences = Preferences.userNodeForPackage(ShortcutViewModel::class.java)
         keys = preferences.get(name, defaultKeys.toJson()).fromJson<List<Key>>() ?: defaultKeys
     }
 
+    // Page and Search
     object Search : Shortcuts(listOf(Key.MetaLeft, Key.S), "Search")
+    object Refresh : Shortcuts(listOf(Key.MetaLeft, Key.R), "Refresh")
+    object PreviousPage : Shortcuts(listOf(Key.MetaLeft, Key.LeftBracket), "Previous Page")
+    object NextPage : Shortcuts(listOf(Key.MetaLeft, Key.RightBracket), "Next Page")
 
+    // Topic
     object AddTopic : Shortcuts(listOf(Key.Enter), "Add Topic")
     object PreviousTopic : Shortcuts(listOf(Key.MetaLeft, Key.ShiftLeft, Key.PageUp), "Previous Topic")
     object NextTopic : Shortcuts(listOf(Key.MetaLeft, Key.ShiftLeft, Key.PageDown), "Next Topic")
@@ -46,6 +51,7 @@ sealed class Shortcuts(val defaultKeys: List<Key>, private val visibleText: Stri
     object ScrollToBottomTopic : Shortcuts(listOf(Key.MetaLeft, Key.ShiftLeft, Key.MoveEnd), "Scroll to Bottom Topic")
     object DeleteTopic : Shortcuts(listOf(Key.MetaLeft, Key.ShiftLeft, Key.Delete), "Delete Topic")
 
+    // Repo
     object PreviousRepo : Shortcuts(listOf(Key.MetaLeft, Key.PageUp), "Previous Repo")
     object NextRepo : Shortcuts(listOf(Key.MetaLeft, Key.PageDown), "Next Repo")
     object ScrollToTopRepo : Shortcuts(listOf(Key.MetaLeft, Key.MoveHome), "Scroll to Top Repo")
@@ -53,15 +59,16 @@ sealed class Shortcuts(val defaultKeys: List<Key>, private val visibleText: Stri
     object OpenRepo : Shortcuts(listOf(Key.MetaLeft, Key.O), "Open Repo")
     object AddRepoToHistory : Shortcuts(listOf(Key.MetaLeft, Key.ShiftLeft, Key.AltLeft, Key.A), "Add Repo to History")
 
-    override fun toString(): String = "$visibleText = ${keys.joinToString(separator = "+") { KeyEvent.getKeyText(it.nativeKeyCode) }}"
+    // History
+    object OpenCloseHistory : Shortcuts(listOf(Key.MetaLeft, Key.AltLeft, Key.ShiftLeft, Key.H), "Open/Close History")
+    object ScrollToTopHistory : Shortcuts(listOf(Key.MetaLeft, Key.AltLeft, Key.ShiftLeft, Key.MoveHome), "Scroll to Top History")
+    object ScrollToBottomHistory : Shortcuts(listOf(Key.MetaLeft, Key.AltLeft, Key.ShiftLeft, Key.MoveEnd), "Scroll to Bottom History")
+    object DeleteHistory : Shortcuts(listOf(Key.MetaLeft, Key.AltLeft, Key.ShiftLeft, Key.Delete), "Delete History")
+    object PreviousHistory : Shortcuts(listOf(Key.MetaLeft, Key.AltLeft, Key.ShiftLeft, Key.PageUp), "Previous History")
+    object NextHistory : Shortcuts(listOf(Key.MetaLeft, Key.AltLeft, Key.ShiftLeft, Key.PageDown), "Next History")
+    object OpenHistory : Shortcuts(listOf(Key.MetaLeft, Key.AltLeft, Key.ShiftLeft, Key.O), "Open History")
 
-    private fun List<Key>.anyMeta() = any { it == Key.MetaLeft || it == Key.MetaRight }
-    private fun List<Key>.anyCtrl() = any { it == Key.CtrlLeft || it == Key.CtrlRight }
-    private fun List<Key>.anyAlt() = any { it == Key.AltLeft || it == Key.AltRight }
-    private fun List<Key>.anyShift() = any { it == Key.ShiftLeft || it == Key.ShiftRight }
-    private fun List<Key>.filterOutModifiers() = filterNot {
-        it in listOf(Key.MetaLeft, Key.MetaRight, Key.CtrlLeft, Key.CtrlRight, Key.AltLeft, Key.AltRight, Key.ShiftLeft, Key.ShiftRight)
-    }
+    override fun toString(): String = "$visibleText = ${keys.joinToString(separator = "+") { KeyEvent.getKeyText(it.nativeKeyCode) }}"
 
     fun keyShortcut(): KeyShortcut = KeyShortcut(
         keys.filterOutModifiers().firstOrNull() ?: Key.PageUp,
@@ -74,6 +81,9 @@ sealed class Shortcuts(val defaultKeys: List<Key>, private val visibleText: Stri
     companion object {
         fun values() = arrayOf(
             Search,
+            Refresh,
+            PreviousPage,
+            NextPage,
             AddTopic,
             PreviousTopic,
             NextTopic,
@@ -85,7 +95,14 @@ sealed class Shortcuts(val defaultKeys: List<Key>, private val visibleText: Stri
             ScrollToTopRepo,
             ScrollToBottomRepo,
             OpenRepo,
-            AddRepoToHistory
+            AddRepoToHistory,
+            OpenCloseHistory,
+            ScrollToTopHistory,
+            ScrollToBottomHistory,
+            DeleteHistory,
+            PreviousHistory,
+            NextHistory,
+            OpenHistory
         )
     }
 }
@@ -98,52 +115,31 @@ inline fun <reified T> String?.fromJson(): T? = try {
 
 fun Any?.toJson(): String = Gson().toJson(this)
 
+fun List<Key>.anyMeta() = any { it == Key.MetaLeft || it == Key.MetaRight }
+fun List<Key>.anyCtrl() = any { it == Key.CtrlLeft || it == Key.CtrlRight }
+fun List<Key>.anyAlt() = any { it == Key.AltLeft || it == Key.AltRight }
+fun List<Key>.anyShift() = any { it == Key.ShiftLeft || it == Key.ShiftRight }
+fun List<Key>.filterOutModifiers() = filterNot {
+    it in listOf(Key.MetaLeft, Key.MetaRight, Key.CtrlLeft, Key.CtrlRight, Key.AltLeft, Key.AltRight, Key.ShiftLeft, Key.ShiftRight)
+}
+
 class ShortcutViewModel {
-    private val preferences = Preferences.systemNodeForPackage(ShortcutViewModel::class.java)
+    private val preferences = Preferences.userNodeForPackage(ShortcutViewModel::class.java)
 
     init {
         preferences.addPreferenceChangeListener { pcl ->
-            when (pcl.key) {
-                Shortcuts.Search.name -> Shortcuts.Search.keys = pcl.newValue.fromJson<List<Key>>() ?: Shortcuts.Search.defaultKeys
-                Shortcuts.AddTopic.name -> Shortcuts.AddTopic.keys = pcl.newValue.fromJson<List<Key>>() ?: Shortcuts.AddTopic.defaultKeys
-                Shortcuts.PreviousTopic.name -> Shortcuts.PreviousTopic.keys =
-                    pcl.newValue.fromJson<List<Key>>() ?: Shortcuts.PreviousTopic.defaultKeys
-                Shortcuts.NextTopic.name -> Shortcuts.NextTopic.keys = pcl.newValue.fromJson<List<Key>>() ?: Shortcuts.NextTopic.defaultKeys
-                Shortcuts.ScrollToTopTopic.name -> Shortcuts.ScrollToTopTopic.keys =
-                    pcl.newValue.fromJson<List<Key>>() ?: Shortcuts.ScrollToTopTopic.defaultKeys
-                Shortcuts.ScrollToBottomTopic.name -> Shortcuts.ScrollToBottomTopic.keys =
-                    pcl.newValue.fromJson<List<Key>>() ?: Shortcuts.ScrollToBottomTopic.defaultKeys
-                Shortcuts.DeleteTopic.name -> Shortcuts.DeleteTopic.keys = pcl.newValue.fromJson<List<Key>>() ?: Shortcuts.DeleteTopic.defaultKeys
-                Shortcuts.PreviousRepo.name -> Shortcuts.PreviousRepo.keys = pcl.newValue.fromJson<List<Key>>() ?: Shortcuts.PreviousRepo.defaultKeys
-                Shortcuts.NextRepo.name -> Shortcuts.NextRepo.keys = pcl.newValue.fromJson<List<Key>>() ?: Shortcuts.NextRepo.defaultKeys
-                Shortcuts.ScrollToTopRepo.name -> Shortcuts.ScrollToTopRepo.keys =
-                    pcl.newValue.fromJson<List<Key>>() ?: Shortcuts.ScrollToTopRepo.defaultKeys
-                Shortcuts.ScrollToBottomRepo.name -> Shortcuts.ScrollToBottomRepo.keys =
-                    pcl.newValue.fromJson<List<Key>>() ?: Shortcuts.ScrollToBottomRepo.defaultKeys
-                Shortcuts.OpenRepo.name -> Shortcuts.OpenRepo.keys = pcl.newValue.fromJson<List<Key>>() ?: Shortcuts.OpenRepo.defaultKeys
-                Shortcuts.AddRepoToHistory.name -> Shortcuts.AddRepoToHistory.keys =
-                    pcl.newValue.fromJson<List<Key>>() ?: Shortcuts.AddRepoToHistory.defaultKeys
-            }
+            Shortcuts.values().firstOrNull { it.name == pcl.key }?.let { it.keys = pcl.newValue.fromJson<List<Key>>() ?: it.defaultKeys }
         }
     }
 
-    fun updateNextTopicShortcut(keys: List<Key>) = preferences.put(Shortcuts.NextTopic.name, keys.toJson())
-    fun updatePreviousTopicShortcut(keys: List<Key>) = preferences.put(Shortcuts.PreviousTopic.name, keys.toJson())
-    fun updateSearchShortcut(keys: List<Key>) = preferences.put(Shortcuts.Search.name, keys.toJson())
-    fun updateAddTopicShortcut(keys: List<Key>) = preferences.put(Shortcuts.AddTopic.name, keys.toJson())
-    fun updateScrollToTopTopicShortcut(keys: List<Key>) = preferences.put(Shortcuts.ScrollToTopTopic.name, keys.toJson())
-    fun updateScrollToBottomTopicShortcut(keys: List<Key>) = preferences.put(Shortcuts.ScrollToBottomTopic.name, keys.toJson())
-    fun updateDeleteTopicShortcut(keys: List<Key>) = preferences.put(Shortcuts.DeleteTopic.name, keys.toJson())
-    fun updatePreviousRepoShortcut(keys: List<Key>) = preferences.put(Shortcuts.PreviousRepo.name, keys.toJson())
-    fun updateNextRepoShortcut(keys: List<Key>) = preferences.put(Shortcuts.NextRepo.name, keys.toJson())
-    fun updateScrollToTopRepoShortcut(keys: List<Key>) = preferences.put(Shortcuts.ScrollToTopRepo.name, keys.toJson())
-    fun updateScrollToBottomRepoShortcut(keys: List<Key>) = preferences.put(Shortcuts.ScrollToBottomRepo.name, keys.toJson())
-    fun updateOpenRepoShortcut(keys: List<Key>) = preferences.put(Shortcuts.OpenRepo.name, keys.toJson())
-    fun updateAddRepoToHistoryShortcut(keys: List<Key>) = preferences.put(Shortcuts.AddRepoToHistory.name, keys.toJson())
+    fun onClick(shortcutSelected: Shortcuts?, keysPressed: List<Key>) {
+        shortcutSelected?.let { preferences.put(it.name, keysPressed.toJson()) }
+    }
 
-    fun resetAll() {
-        preferences.clear()
-        Shortcuts.values().forEach { it.keys = it.defaultKeys }
+    fun resetAll() = Shortcuts.values().forEach { onClick(it, it.defaultKeys) }
+
+    fun resetShortcut(shortcutSelected: Shortcuts?) {
+        shortcutSelected?.let { onClick(it, it.defaultKeys) }
     }
 }
 
@@ -196,35 +192,22 @@ fun KeyboardView(onCloseRequest: () -> Unit) {
                 Column(modifier = Modifier.padding(4.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                         OutlinedButton({ vm.resetAll() }) { Text("Reset All") }
+                        OutlinedButton(onClick = { vm.onClick(shortcutSelected, keysPressed) }) { Text("Save New Shortcut") }
                         OutlinedButton(
-                            onClick = {
-                                when (shortcutSelected) {
-                                    Shortcuts.Search -> vm.updateSearchShortcut(keysPressed)
-                                    Shortcuts.AddTopic -> vm.updateAddTopicShortcut(keysPressed)
-                                    Shortcuts.PreviousTopic -> vm.updatePreviousTopicShortcut(keysPressed)
-                                    Shortcuts.NextTopic -> vm.updateNextTopicShortcut(keysPressed)
-                                    Shortcuts.AddRepoToHistory -> vm.updateAddRepoToHistoryShortcut(keysPressed)
-                                    Shortcuts.DeleteTopic -> vm.updateDeleteTopicShortcut(keysPressed)
-                                    Shortcuts.NextRepo -> vm.updateNextRepoShortcut(keysPressed)
-                                    Shortcuts.OpenRepo -> vm.updateOpenRepoShortcut(keysPressed)
-                                    Shortcuts.PreviousRepo -> vm.updatePreviousRepoShortcut(keysPressed)
-                                    Shortcuts.ScrollToBottomRepo -> vm.updateScrollToBottomRepoShortcut(keysPressed)
-                                    Shortcuts.ScrollToBottomTopic -> vm.updateScrollToBottomTopicShortcut(keysPressed)
-                                    Shortcuts.ScrollToTopRepo -> vm.updateScrollToTopRepoShortcut(keysPressed)
-                                    Shortcuts.ScrollToTopTopic -> vm.updateScrollToTopTopicShortcut(keysPressed)
-                                    null -> {}
-                                }
-                            }
-                        ) { Text("Save New Shortcut") }
+                            enabled = shortcutSelected != null,
+                            onClick = { vm.resetShortcut(shortcutSelected) }
+                        ) { Text("Reset Shortcut") }
                     }
 
                     val shortcutScrollState = rememberLazyListState()
 
-                    Box(modifier = Modifier.padding(4.dp)) {
+                    Box(modifier = Modifier.fillMaxWidth(.5f)) {
                         LazyColumn(
                             state = shortcutScrollState,
                             verticalArrangement = Arrangement.spacedBy(2.dp),
-                            modifier = Modifier.padding(end = 4.dp)
+                            modifier = Modifier
+                                .matchParentSize()
+                                .padding(end = 4.dp)
                         ) {
                             items(Shortcuts.values()) {
                                 CustomChip(
