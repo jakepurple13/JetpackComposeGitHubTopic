@@ -1,38 +1,265 @@
+@file:OptIn(ExperimentalComposeUiApi::class)
+
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.window.WindowDraggableArea
 import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.*
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.MenuBar
-import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.WindowPlacement
-import androidx.compose.ui.window.rememberWindowState
+import androidx.compose.ui.window.*
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import java.awt.event.KeyEvent
+import java.util.prefs.Preferences
+
+sealed class Shortcuts(val defaultKeys: List<Key>, private val visibleText: String) {
+
+    var keys by mutableStateOf(defaultKeys)
+    val name = this::class.simpleName ?: this::class.java.name
+
+    init {
+        val preferences = Preferences.userNodeForPackage(ShortcutViewModel::class.java)
+        keys = preferences.get(name, defaultKeys.toJson()).fromJson<List<Key>>() ?: defaultKeys
+    }
+
+    object Search : Shortcuts(listOf(Key.MetaLeft, Key.S), "Search")
+
+    object AddTopic : Shortcuts(listOf(Key.Enter), "Add Topic")
+    object PreviousTopic : Shortcuts(listOf(Key.MetaLeft, Key.ShiftLeft, Key.PageUp), "Previous Topic")
+    object NextTopic : Shortcuts(listOf(Key.MetaLeft, Key.ShiftLeft, Key.PageDown), "Next Topic")
+    object ScrollToTopTopic : Shortcuts(listOf(Key.MetaLeft, Key.ShiftLeft, Key.MoveHome), "Scroll to Top Topic")
+    object ScrollToBottomTopic : Shortcuts(listOf(Key.MetaLeft, Key.ShiftLeft, Key.MoveEnd), "Scroll to Bottom Topic")
+    object DeleteTopic : Shortcuts(listOf(Key.MetaLeft, Key.ShiftLeft, Key.Delete), "Delete Topic")
+
+    object PreviousRepo : Shortcuts(listOf(Key.MetaLeft, Key.PageUp), "Previous Repo")
+    object NextRepo : Shortcuts(listOf(Key.MetaLeft, Key.PageDown), "Next Repo")
+    object ScrollToTopRepo : Shortcuts(listOf(Key.MetaLeft, Key.MoveHome), "Scroll to Top Repo")
+    object ScrollToBottomRepo : Shortcuts(listOf(Key.MetaLeft, Key.MoveEnd), "Scroll to Bottom Repo")
+    object OpenRepo : Shortcuts(listOf(Key.MetaLeft, Key.O), "Open Repo")
+    object AddRepoToHistory : Shortcuts(listOf(Key.MetaLeft, Key.ShiftLeft, Key.AltLeft, Key.A), "Add Repo to History")
+
+    override fun toString(): String = "$visibleText = ${keys.joinToString(separator = "+") { KeyEvent.getKeyText(it.nativeKeyCode) }}"
+
+    private fun List<Key>.anyMeta() = any { it == Key.MetaLeft || it == Key.MetaRight }
+    private fun List<Key>.anyCtrl() = any { it == Key.CtrlLeft || it == Key.CtrlRight }
+    private fun List<Key>.anyAlt() = any { it == Key.AltLeft || it == Key.AltRight }
+    private fun List<Key>.anyShift() = any { it == Key.ShiftLeft || it == Key.ShiftRight }
+    private fun List<Key>.filterOutModifiers() = filterNot {
+        it in listOf(Key.MetaLeft, Key.MetaRight, Key.CtrlLeft, Key.CtrlRight, Key.AltLeft, Key.AltRight, Key.ShiftLeft, Key.ShiftRight)
+    }
+
+    fun keyShortcut(): KeyShortcut = KeyShortcut(
+        keys.filterOutModifiers().firstOrNull() ?: Key.PageUp,
+        meta = keys.anyMeta(),
+        shift = keys.anyShift(),
+        ctrl = keys.anyCtrl(),
+        alt = keys.anyAlt()
+    )
+
+    companion object {
+        fun values() = arrayOf(
+            Search,
+            AddTopic,
+            PreviousTopic,
+            NextTopic,
+            ScrollToTopTopic,
+            ScrollToBottomTopic,
+            DeleteTopic,
+            PreviousRepo,
+            NextRepo,
+            ScrollToTopRepo,
+            ScrollToBottomRepo,
+            OpenRepo,
+            AddRepoToHistory
+        )
+    }
+}
+
+inline fun <reified T> String?.fromJson(): T? = try {
+    Gson().fromJson(this, object : TypeToken<T>() {}.type)
+} catch (e: Exception) {
+    null
+}
+
+fun Any?.toJson(): String = Gson().toJson(this)
+
+class ShortcutViewModel {
+    private val preferences = Preferences.systemNodeForPackage(ShortcutViewModel::class.java)
+
+    init {
+        preferences.addPreferenceChangeListener { pcl ->
+            when (pcl.key) {
+                Shortcuts.Search.name -> Shortcuts.Search.keys = pcl.newValue.fromJson<List<Key>>() ?: Shortcuts.Search.defaultKeys
+                Shortcuts.AddTopic.name -> Shortcuts.AddTopic.keys = pcl.newValue.fromJson<List<Key>>() ?: Shortcuts.AddTopic.defaultKeys
+                Shortcuts.PreviousTopic.name -> Shortcuts.PreviousTopic.keys =
+                    pcl.newValue.fromJson<List<Key>>() ?: Shortcuts.PreviousTopic.defaultKeys
+                Shortcuts.NextTopic.name -> Shortcuts.NextTopic.keys = pcl.newValue.fromJson<List<Key>>() ?: Shortcuts.NextTopic.defaultKeys
+                Shortcuts.ScrollToTopTopic.name -> Shortcuts.ScrollToTopTopic.keys =
+                    pcl.newValue.fromJson<List<Key>>() ?: Shortcuts.ScrollToTopTopic.defaultKeys
+                Shortcuts.ScrollToBottomTopic.name -> Shortcuts.ScrollToBottomTopic.keys =
+                    pcl.newValue.fromJson<List<Key>>() ?: Shortcuts.ScrollToBottomTopic.defaultKeys
+                Shortcuts.DeleteTopic.name -> Shortcuts.DeleteTopic.keys = pcl.newValue.fromJson<List<Key>>() ?: Shortcuts.DeleteTopic.defaultKeys
+                Shortcuts.PreviousRepo.name -> Shortcuts.PreviousRepo.keys = pcl.newValue.fromJson<List<Key>>() ?: Shortcuts.PreviousRepo.defaultKeys
+                Shortcuts.NextRepo.name -> Shortcuts.NextRepo.keys = pcl.newValue.fromJson<List<Key>>() ?: Shortcuts.NextRepo.defaultKeys
+                Shortcuts.ScrollToTopRepo.name -> Shortcuts.ScrollToTopRepo.keys =
+                    pcl.newValue.fromJson<List<Key>>() ?: Shortcuts.ScrollToTopRepo.defaultKeys
+                Shortcuts.ScrollToBottomRepo.name -> Shortcuts.ScrollToBottomRepo.keys =
+                    pcl.newValue.fromJson<List<Key>>() ?: Shortcuts.ScrollToBottomRepo.defaultKeys
+                Shortcuts.OpenRepo.name -> Shortcuts.OpenRepo.keys = pcl.newValue.fromJson<List<Key>>() ?: Shortcuts.OpenRepo.defaultKeys
+                Shortcuts.AddRepoToHistory.name -> Shortcuts.AddRepoToHistory.keys =
+                    pcl.newValue.fromJson<List<Key>>() ?: Shortcuts.AddRepoToHistory.defaultKeys
+            }
+        }
+    }
+
+    fun updateNextTopicShortcut(keys: List<Key>) = preferences.put(Shortcuts.NextTopic.name, keys.toJson())
+    fun updatePreviousTopicShortcut(keys: List<Key>) = preferences.put(Shortcuts.PreviousTopic.name, keys.toJson())
+    fun updateSearchShortcut(keys: List<Key>) = preferences.put(Shortcuts.Search.name, keys.toJson())
+    fun updateAddTopicShortcut(keys: List<Key>) = preferences.put(Shortcuts.AddTopic.name, keys.toJson())
+    fun updateScrollToTopTopicShortcut(keys: List<Key>) = preferences.put(Shortcuts.ScrollToTopTopic.name, keys.toJson())
+    fun updateScrollToBottomTopicShortcut(keys: List<Key>) = preferences.put(Shortcuts.ScrollToBottomTopic.name, keys.toJson())
+    fun updateDeleteTopicShortcut(keys: List<Key>) = preferences.put(Shortcuts.DeleteTopic.name, keys.toJson())
+    fun updatePreviousRepoShortcut(keys: List<Key>) = preferences.put(Shortcuts.PreviousRepo.name, keys.toJson())
+    fun updateNextRepoShortcut(keys: List<Key>) = preferences.put(Shortcuts.NextRepo.name, keys.toJson())
+    fun updateScrollToTopRepoShortcut(keys: List<Key>) = preferences.put(Shortcuts.ScrollToTopRepo.name, keys.toJson())
+    fun updateScrollToBottomRepoShortcut(keys: List<Key>) = preferences.put(Shortcuts.ScrollToBottomRepo.name, keys.toJson())
+    fun updateOpenRepoShortcut(keys: List<Key>) = preferences.put(Shortcuts.OpenRepo.name, keys.toJson())
+    fun updateAddRepoToHistoryShortcut(keys: List<Key>) = preferences.put(Shortcuts.AddRepoToHistory.name, keys.toJson())
+
+    fun resetAll() {
+        preferences.clear()
+        Shortcuts.values().forEach { it.keys = it.defaultKeys }
+    }
+}
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
-fun KeyboardView(onCloseRequest: () -> Unit, onClick: (Key) -> Unit) {
+fun KeyboardView(onCloseRequest: () -> Unit) {
+
+    val vm = remember { ShortcutViewModel() }
+
     val state = rememberWindowState()
 
+    var shortcutSelected: Shortcuts? by remember { mutableStateOf(null) }
     val keysPressed = remember { mutableStateListOf<Key>() }
+
+    val onClick: (Key) -> Unit = {
+        if (keysPressed.contains(it)) {
+            keysPressed.remove(it)
+        } else {
+            keysPressed.add(it)
+        }
+    }
+
+    val windowPosition = state.position
+    val shortcutState = rememberWindowState(position = WindowPosition.Aligned(Alignment.CenterEnd))
+
+    LaunchedEffect(windowPosition) {
+        snapshotFlow {
+            if (windowPosition is WindowPosition.Absolute)
+                windowPosition.copy(x = windowPosition.x + state.size.width + 50.dp)
+            else WindowPosition.Aligned(Alignment.CenterEnd)
+        }
+            .distinctUntilChanged()
+            .debounce(200)
+            .onEach { shortcutState.position = it }
+            .launchIn(this)
+    }
+
+    Window(
+        state = shortcutState,
+        onCloseRequest = onCloseRequest,
+        title = "Shortcuts",
+        undecorated = true,
+        transparent = true,
+        focusable = false,
+        resizable = false,
+        alwaysOnTop = true,
+    ) {
+        MaterialTheme(colors = if (darkTheme) darkColors(primary = MaterialBlue) else lightColors(primary = MaterialBlue)) {
+            Surface(shape = RoundedCornerShape(8.dp)) {
+                Column(modifier = Modifier.padding(4.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                        OutlinedButton({ vm.resetAll() }) { Text("Reset All") }
+                        OutlinedButton(
+                            onClick = {
+                                when (shortcutSelected) {
+                                    Shortcuts.Search -> vm.updateSearchShortcut(keysPressed)
+                                    Shortcuts.AddTopic -> vm.updateAddTopicShortcut(keysPressed)
+                                    Shortcuts.PreviousTopic -> vm.updatePreviousTopicShortcut(keysPressed)
+                                    Shortcuts.NextTopic -> vm.updateNextTopicShortcut(keysPressed)
+                                    Shortcuts.AddRepoToHistory -> vm.updateAddRepoToHistoryShortcut(keysPressed)
+                                    Shortcuts.DeleteTopic -> vm.updateDeleteTopicShortcut(keysPressed)
+                                    Shortcuts.NextRepo -> vm.updateNextRepoShortcut(keysPressed)
+                                    Shortcuts.OpenRepo -> vm.updateOpenRepoShortcut(keysPressed)
+                                    Shortcuts.PreviousRepo -> vm.updatePreviousRepoShortcut(keysPressed)
+                                    Shortcuts.ScrollToBottomRepo -> vm.updateScrollToBottomRepoShortcut(keysPressed)
+                                    Shortcuts.ScrollToBottomTopic -> vm.updateScrollToBottomTopicShortcut(keysPressed)
+                                    Shortcuts.ScrollToTopRepo -> vm.updateScrollToTopRepoShortcut(keysPressed)
+                                    Shortcuts.ScrollToTopTopic -> vm.updateScrollToTopTopicShortcut(keysPressed)
+                                    null -> {}
+                                }
+                            }
+                        ) { Text("Save New Shortcut") }
+                    }
+
+                    val shortcutScrollState = rememberLazyListState()
+
+                    Box(modifier = Modifier.padding(4.dp)) {
+                        LazyColumn(
+                            state = shortcutScrollState,
+                            verticalArrangement = Arrangement.spacedBy(2.dp),
+                            modifier = Modifier.padding(end = 4.dp)
+                        ) {
+                            items(Shortcuts.values()) {
+                                CustomChip(
+                                    it.toString(),
+                                    textColor = animateColorAsState(
+                                        if (shortcutSelected == it) MaterialTheme.colors.onPrimary
+                                        else MaterialTheme.colors.onSurface
+                                    ).value,
+                                    backgroundColor = animateColorAsState(
+                                        if (shortcutSelected == it) MaterialBlue
+                                        else MaterialTheme.colors.surface
+                                    ).value,
+                                    modifier = Modifier.cursorForSelectable()
+                                ) {
+                                    keysPressed.clear()
+                                    if (shortcutSelected == it) {
+                                        shortcutSelected = null
+                                    } else {
+                                        shortcutSelected = it
+                                        keysPressed.addAll(it.keys)
+                                    }
+                                }
+                            }
+                        }
+                        VerticalScrollbar(
+                            modifier = Modifier
+                                .align(Alignment.CenterEnd)
+                                .fillMaxHeight(),
+                            adapter = rememberScrollbarAdapter(shortcutScrollState)
+                        )
+                    }
+                }
+            }
+        }
+    }
 
     Window(
         state = state,
@@ -41,7 +268,7 @@ fun KeyboardView(onCloseRequest: () -> Unit, onClick: (Key) -> Unit) {
         undecorated = true,
         transparent = true,
         onKeyEvent = {
-            if (it.key !in keysPressed && it.type == KeyEventType.KeyDown) {
+            if (it.key !in keysPressed && it.type == if (shortcutSelected != null) KeyEventType.KeyUp else KeyEventType.KeyDown) {
                 keysPressed.add(it.key)
             } else if (it.key in keysPressed && it.type == KeyEventType.KeyUp) {
                 keysPressed.remove(it.key)
@@ -66,55 +293,7 @@ fun KeyboardView(onCloseRequest: () -> Unit, onClick: (Key) -> Unit) {
 
         MaterialTheme(colors = if (darkTheme) darkColors(primary = MaterialBlue) else lightColors(primary = MaterialBlue)) {
             Surface(shape = if (state.placement == WindowPlacement.Maximized) RectangleShape else RoundedCornerShape(8.dp)) {
-                Scaffold(
-                    topBar = {
-                        WindowDraggableArea(
-                            modifier = Modifier.combinedClickable(
-                                indication = null,
-                                interactionSource = remember { MutableInteractionSource() },
-                                onClick = {},
-                                onDoubleClick = {
-                                    state.placement = if (state.placement != WindowPlacement.Maximized) {
-                                        WindowPlacement.Maximized
-                                    } else {
-                                        WindowPlacement.Floating
-                                    }
-                                }
-                            )
-                        ) {
-                            val hasFocus = LocalWindowInfo.current.isWindowFocused
-                            val focusedAlpha by animateFloatAsState(if (hasFocus) 1.0f else 0.5f)
-
-                            TopAppBar(
-                                title = { Text("Keyboard Configurations") },
-                                elevation = animateDpAsState(if (hasFocus) AppBarDefaults.TopAppBarElevation else 0.dp).value,
-                                backgroundColor = MaterialTheme.colors.primarySurface.copy(alpha = focusedAlpha),
-                                actions = {
-
-                                    IconButton(onClick = onCloseRequest) { Icon(Icons.Default.Close, null) }
-                                    IconButton(onClick = { state.isMinimized = true }) { Icon(Icons.Default.Minimize, null) }
-                                    IconButton(
-                                        onClick = {
-                                            state.placement = if (state.placement != WindowPlacement.Maximized) {
-                                                WindowPlacement.Maximized
-                                            } else {
-                                                WindowPlacement.Floating
-                                            }
-                                        }
-                                    ) { Icon(Icons.Default.Maximize, null) }
-                                }
-                            )
-                        }
-                    },
-                    bottomBar = {
-                        CustomBottomAppBar {
-                            Column {
-                                Text("Search = Cmd+S")
-                                Text("Add Topic = Enter")
-                            }
-                        }
-                    }
-                ) { p ->
+                Scaffold(topBar = { WindowHeader(state, { Text("Keyboard Configurations") }, onCloseRequest) }) { p ->
                     //Full weight is about 13.5 - 14
                     Column(
                         verticalArrangement = Arrangement.spacedBy(2.dp),
@@ -360,6 +539,7 @@ fun KeyView(key: Key, onClick: (Key) -> Unit, modifier: Modifier = Modifier, key
     Card(
         modifier = Modifier
             .height(40.dp)
+            .cursorForSelectable()
             .then(modifier),
         shape = RoundedCornerShape(4.dp),
         onClick = { onClick(key) },

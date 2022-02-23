@@ -69,34 +69,42 @@ fun FrameWindowScope.App() {
         )
     }
 
+    fun List<Key>.anyMeta() = any { it == Key.MetaLeft || it == Key.MetaRight }
+    fun List<Key>.anyCtrl() = any { it == Key.CtrlLeft || it == Key.CtrlRight }
+    fun List<Key>.anyAlt() = any { it == Key.AltLeft || it == Key.AltRight }
+    fun List<Key>.anyShift() = any { it == Key.ShiftLeft || it == Key.ShiftRight }
+    fun List<Key>.filterOutModifiers() = filterNot {
+        it in listOf(Key.MetaLeft, Key.MetaRight, Key.CtrlLeft, Key.CtrlRight, Key.AltLeft, Key.AltRight, Key.ShiftLeft, Key.ShiftRight)
+    }
+
     MenuBar {
         // Topic Selector and Deleter
         Menu("Topics", mnemonic = 'T') {
             Item(
                 "Previous",
                 onClick = { scope.launch { viewModel.previousTopicSelect(topicState) } },
-                shortcut = KeyShortcut(Key.PageUp, meta = true, shift = true)
+                shortcut = Shortcuts.PreviousTopic.keyShortcut()
             )
             Item(
                 "Next",
                 onClick = { scope.launch { viewModel.nextTopicSelect(topicState) } },
-                shortcut = KeyShortcut(Key.PageDown, meta = true, shift = true)
+                shortcut = Shortcuts.NextTopic.keyShortcut()
             )
             Item(
                 "Scroll to top",
                 onClick = { scope.launch { viewModel.scrollToTopTopic(topicState) } },
-                shortcut = KeyShortcut(Key.MoveHome, meta = true, shift = true)
+                shortcut = Shortcuts.ScrollToTopTopic.keyShortcut()
             )
             Item(
                 "Scroll to bottom",
                 onClick = { scope.launch { viewModel.scrollToBottomTopic(topicState) } },
-                shortcut = KeyShortcut(Key.MoveEnd, meta = true, shift = true)
+                shortcut = Shortcuts.ScrollToBottomTopic.keyShortcut()
             )
             Separator()
             Item(
                 "Delete",
                 onClick = { viewModel.deleteTopic() },
-                shortcut = KeyShortcut(Key.Delete, meta = true, shift = true)
+                shortcut = Shortcuts.DeleteTopic.keyShortcut()
             )
         }
 
@@ -105,34 +113,34 @@ fun FrameWindowScope.App() {
             Item(
                 "Previous",
                 onClick = { scope.launch { viewModel.previousRepoSelect(state) } },
-                shortcut = KeyShortcut(Key.PageUp, meta = true)
+                shortcut = Shortcuts.PreviousRepo.keyShortcut()
             )
             Item(
                 "Next",
                 onClick = { scope.launch { viewModel.nextRepoSelect(state) } },
-                shortcut = KeyShortcut(Key.PageDown, meta = true)
+                shortcut = Shortcuts.NextRepo.keyShortcut()
             )
             Item(
                 "Scroll to top",
                 onClick = { scope.launch { viewModel.scrollToTopRepo(state) } },
-                shortcut = KeyShortcut(Key.MoveHome, meta = true)
+                shortcut = Shortcuts.ScrollToTopRepo.keyShortcut()
             )
             Item(
                 "Scroll to bottom",
                 onClick = { scope.launch { viewModel.scrollToBottomRepo(state) } },
-                shortcut = KeyShortcut(Key.MoveEnd, meta = true)
+                shortcut = Shortcuts.ScrollToBottomRepo.keyShortcut()
             )
             Separator()
             Item(
                 "Open",
                 enabled = viewModel.repoList.isNotEmpty() && viewModel.repoSelected in 0..viewModel.repoList.lastIndex,
                 onClick = { viewModel.openSelectedRepo() },
-                shortcut = KeyShortcut(Key.O, meta = true)
+                shortcut = Shortcuts.OpenRepo.keyShortcut()
             )
             Item(
                 "Add to History",
                 onClick = { viewModel.addSelectedTopicToHistory() },
-                shortcut = KeyShortcut(Key.A, meta = true, shift = true, alt = true)
+                shortcut = Shortcuts.AddRepoToHistory.keyShortcut()
             )
         }
 
@@ -141,7 +149,7 @@ fun FrameWindowScope.App() {
             Item(
                 "Search",
                 onClick = { scope.launch { viewModel.search(state, 1) } },
-                shortcut = KeyShortcut(Key.S, meta = true)
+                shortcut = Shortcuts.Search.keyShortcut()
             )
             Item(
                 "Refresh",
@@ -630,8 +638,6 @@ fun main() = application {
     }
 
     if (showKeyboard) {
-        KeyboardView({ showKeyboard = false }) {
-
-        }
+        KeyboardView { showKeyboard = false }
     }
 }

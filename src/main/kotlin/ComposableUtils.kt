@@ -1,15 +1,17 @@
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.forEachGesture
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.window.WindowDraggableArea
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.materialIcon
 import androidx.compose.material.icons.materialPath
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -22,8 +24,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Placeable
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
+import androidx.compose.ui.window.FrameWindowScope
+import androidx.compose.ui.window.WindowPlacement
+import androidx.compose.ui.window.WindowState
 import java.awt.Cursor
 import kotlin.math.max
 
@@ -545,3 +551,44 @@ private suspend fun AwaitPointerEventScope.awaitEventFirstDown(): PointerEvent {
 
 @OptIn(ExperimentalComposeUiApi::class)
 fun Modifier.cursorForSelectable(): Modifier = pointerHoverIcon(PointerIcon(Cursor(Cursor.HAND_CURSOR)))
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun FrameWindowScope.WindowHeader(state: WindowState, title: @Composable () -> Unit, onCloseRequest: () -> Unit) {
+    WindowDraggableArea(
+        modifier = Modifier.combinedClickable(
+            indication = null,
+            interactionSource = remember { MutableInteractionSource() },
+            onClick = {},
+            onDoubleClick = {
+                state.placement = if (state.placement != WindowPlacement.Maximized) {
+                    WindowPlacement.Maximized
+                } else {
+                    WindowPlacement.Floating
+                }
+            }
+        )
+    ) {
+        val hasFocus = LocalWindowInfo.current.isWindowFocused
+        val focusedAlpha by animateFloatAsState(if (hasFocus) 1.0f else 0.5f)
+
+        TopAppBar(
+            title = title,
+            elevation = animateDpAsState(if (hasFocus) AppBarDefaults.TopAppBarElevation else 0.dp).value,
+            backgroundColor = MaterialTheme.colors.primarySurface.copy(alpha = focusedAlpha),
+            actions = {
+                IconButton(onClick = onCloseRequest) { Icon(Icons.Default.Close, null) }
+                IconButton(onClick = { state.isMinimized = true }) { Icon(Icons.Default.Minimize, null) }
+                IconButton(
+                    onClick = {
+                        state.placement = if (state.placement != WindowPlacement.Maximized) {
+                            WindowPlacement.Maximized
+                        } else {
+                            WindowPlacement.Floating
+                        }
+                    }
+                ) { Icon(Icons.Default.Maximize, null) }
+            }
+        )
+    }
+}

@@ -20,6 +20,7 @@ repositories {
 
 dependencies {
     implementation(compose.desktop.currentOs)
+    implementation("org.jetbrains.compose.components:components-splitpane:1.0.1")
     implementation("com.github.tsohr:json:0.0.2")
     implementation("com.mikepenz:multiplatform-markdown-renderer-jvm:0.4.0")
     implementation("org.ocpsoft.prettytime:prettytime:5.0.2.Final")
@@ -29,6 +30,7 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-java-time:$exposedVersion")
     implementation("com.h2database:h2:2.1.210")
     implementation("org.xerial:sqlite-jdbc:3.36.0.2")
+    implementation("com.google.code.gson:gson:2.9.0")
 }
 
 tasks.withType<KotlinCompile>() {
