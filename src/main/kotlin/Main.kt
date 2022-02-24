@@ -161,7 +161,7 @@ fun FrameWindowScope.App() {
         // History
         Menu("History", mnemonic = 'H') {
             Item(
-                "${if (scaffoldState.drawerState.isClosed) "Open" else "Close"}  History",
+                "${if (scaffoldState.drawerState.isClosed) "Open" else "Close"} History",
                 onClick = {
                     scope.launch {
                         if (scaffoldState.drawerState.isClosed) scaffoldState.drawerState.open() else scaffoldState.drawerState.close()

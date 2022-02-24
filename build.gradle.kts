@@ -4,7 +4,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "1.6.10"
-    id("org.jetbrains.compose") version "1.0.1"
+    id("org.jetbrains.compose") version "1.1.0"
 }
 
 group = "me.jrein"
@@ -42,7 +42,7 @@ compose.desktop {
         mainClass = "MainKt"
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "copilot_fun"
+            packageName = "Github Topics"
             packageVersion = "1.0.0"
 
             macOS {

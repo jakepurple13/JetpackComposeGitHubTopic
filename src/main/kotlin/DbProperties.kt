@@ -19,7 +19,7 @@ val FILE_SEPERATOR = File.separator
 
 object DbProperties {
     val db by lazy {
-        TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_SERIALIZABLE
+        println("Connecting to database...")
         //Database.connect("jdbc:h2:./myh2file", "org.h2.Driver")
         //Database.connect("jdbc:h2:mem:regular", "org.h2.Driver")
         //Database.connect("jdbc:sqlite:file:test?mode=memory&cache=shared", "org.sqlite.JDBC")
@@ -27,7 +27,8 @@ object DbProperties {
         //Database.connect("jdbc:sqlite:./data.db", "org.sqlite.JDBC")
         val f = "${System.getProperty("user.home")}${FILE_SEPERATOR}Desktop${FILE_SEPERATOR}githubtopics.db"
         Database.connect("jdbc:sqlite:$f", "org.sqlite.JDBC")
-        //Database.connect("jdbc:h2:$f", "org.h2.Driver")
+            //Database.connect("jdbc:h2:$f", "org.h2.Driver")
+            .also { TransactionManager.manager.defaultIsolationLevel = Connection.TRANSACTION_SERIALIZABLE }
     }
 }
 

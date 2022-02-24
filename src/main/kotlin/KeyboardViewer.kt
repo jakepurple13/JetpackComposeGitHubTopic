@@ -188,7 +188,7 @@ fun KeyboardView(onCloseRequest: () -> Unit) {
 
     Window(
         state = shortcutState,
-        onCloseRequest = onCloseRequest,
+        onCloseRequest = {},
         title = "Shortcuts",
         undecorated = true,
         transparent = true,
