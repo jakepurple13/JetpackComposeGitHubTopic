@@ -1,17 +1,22 @@
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.forEachGesture
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.window.WindowDraggableArea
-import androidx.compose.material.*
+import androidx.compose.material.ContentAlpha
+import androidx.compose.material.Divider
+import androidx.compose.material.LocalContentAlpha
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.materialIcon
-import androidx.compose.material.icons.materialPath
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Maximize
+import androidx.compose.material.icons.filled.Minimize
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -20,7 +25,6 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Placeable
@@ -35,26 +39,26 @@ import kotlin.math.max
 
 val MaterialBlue = Color(0xFF1976d2)
 
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun CustomChip(
     category: String,
     modifier: Modifier = Modifier,
-    textColor: Color = MaterialTheme.colors.onSurface,
-    backgroundColor: Color = MaterialTheme.colors.surface,
+    textColor: Color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+    backgroundColor: Color = androidx.compose.material3.MaterialTheme.colorScheme.surface,
     onClick: () -> Unit = {}
 ) {
-    Surface(
+    androidx.compose.material3.Surface(
         onClick = onClick,
         modifier = Modifier.then(modifier),
-        elevation = 8.dp,
+        tonalElevation = 8.dp,
         shape = RoundedCornerShape(16.dp),
-        color = backgroundColor
+        color = backgroundColor,
+        border = BorderStroke(1.dp, androidx.compose.material3.MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
     ) {
         Row {
             Text(
                 text = category,
-                style = MaterialTheme.typography.body2,
+                style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
                 color = textColor,
                 modifier = Modifier
                     .padding(8.dp)
@@ -66,7 +70,7 @@ fun CustomChip(
 }
 
 @Composable
-public fun FlowRow(
+fun FlowRow(
     modifier: Modifier = Modifier,
     mainAxisSize: SizeMode = SizeMode.Wrap,
     mainAxisAlignment: FlowMainAxisAlignment = FlowMainAxisAlignment.Start,
@@ -342,17 +346,17 @@ internal data class OrientationIndependentConstraints(
 @Composable
 fun CustomBottomAppBar(
     modifier: Modifier = Modifier,
-    backgroundColor: Color = MaterialTheme.colors.primarySurface,
+    backgroundColor: Color = MaterialTheme.colorScheme.surface,
     contentColor: Color = contentColorFor(backgroundColor),
     shape: Shape = RectangleShape,
-    elevation: Dp = AppBarDefaults.BottomAppBarElevation,
-    contentPadding: PaddingValues = AppBarDefaults.ContentPadding,
+    elevation: Dp = 4.dp,
+    contentPadding: PaddingValues = PaddingValues(4.dp, 4.dp),
     content: @Composable RowScope.() -> Unit
 ) {
     Surface(
         color = backgroundColor,
         contentColor = contentColor,
-        elevation = elevation,
+        tonalElevation = elevation,
         shape = shape,
         modifier = modifier
     ) {
@@ -372,7 +376,7 @@ fun CustomBottomAppBar(
 @ExperimentalFoundationApi
 @Composable
 fun CustomTooltip(
-    backgroundColor: Color = MaterialTheme.colors.surface,
+    backgroundColor: Color = MaterialTheme.colorScheme.surface,
     contentColor: Color = contentColorFor(backgroundColor),
     tooltip: @Composable () -> Unit,
     content: @Composable () -> Unit
@@ -389,82 +393,6 @@ fun CustomTooltip(
         }
     ) { content() }
 }
-
-public val Icons.Filled.History: ImageVector
-    get() {
-        if (_history != null) {
-            return _history!!
-        }
-        _history = materialIcon(name = "Filled.History") {
-            materialPath {
-                moveTo(13.0f, 3.0f)
-                curveToRelative(-4.97f, 0.0f, -9.0f, 4.03f, -9.0f, 9.0f)
-                lineTo(1.0f, 12.0f)
-                lineToRelative(3.89f, 3.89f)
-                lineToRelative(0.07f, 0.14f)
-                lineTo(9.0f, 12.0f)
-                lineTo(6.0f, 12.0f)
-                curveToRelative(0.0f, -3.87f, 3.13f, -7.0f, 7.0f, -7.0f)
-                reflectiveCurveToRelative(7.0f, 3.13f, 7.0f, 7.0f)
-                reflectiveCurveToRelative(-3.13f, 7.0f, -7.0f, 7.0f)
-                curveToRelative(-1.93f, 0.0f, -3.68f, -0.79f, -4.94f, -2.06f)
-                lineToRelative(-1.42f, 1.42f)
-                curveTo(8.27f, 19.99f, 10.51f, 21.0f, 13.0f, 21.0f)
-                curveToRelative(4.97f, 0.0f, 9.0f, -4.03f, 9.0f, -9.0f)
-                reflectiveCurveToRelative(-4.03f, -9.0f, -9.0f, -9.0f)
-                close()
-                moveTo(12.0f, 8.0f)
-                verticalLineToRelative(5.0f)
-                lineToRelative(4.28f, 2.54f)
-                lineToRelative(0.72f, -1.21f)
-                lineToRelative(-3.5f, -2.08f)
-                lineTo(13.5f, 8.0f)
-                lineTo(12.0f, 8.0f)
-                close()
-            }
-        }
-        return _history!!
-    }
-
-private var _history: ImageVector? = null
-
-public val Icons.Filled.Minimize: ImageVector
-    get() {
-        if (_minimize != null) {
-            return _minimize!!
-        }
-        _minimize = materialIcon(name = "Filled.Minimize") {
-            materialPath {
-                moveTo(6.0f, 19.0f)
-                horizontalLineToRelative(12.0f)
-                verticalLineToRelative(2.0f)
-                horizontalLineTo(6.0f)
-                close()
-            }
-        }
-        return _minimize!!
-    }
-
-private var _minimize: ImageVector? = null
-
-public val Icons.Filled.Maximize: ImageVector
-    get() {
-        if (_maximize != null) {
-            return _maximize!!
-        }
-        _maximize = materialIcon(name = "Filled.Maximize") {
-            materialPath {
-                moveTo(3.0f, 3.0f)
-                horizontalLineToRelative(18.0f)
-                verticalLineToRelative(2.0f)
-                horizontalLineTo(3.0f)
-                close()
-            }
-        }
-        return _maximize!!
-    }
-
-private var _maximize: ImageVector? = null
 
 @Composable
 @ExperimentalFoundationApi
@@ -571,12 +499,14 @@ fun FrameWindowScope.WindowHeader(state: WindowState, title: @Composable () -> U
             )
         ) {
             val hasFocus = LocalWindowInfo.current.isWindowFocused
-            val focusedAlpha by animateFloatAsState(if (hasFocus) 1.0f else 0.5f)
 
-            TopAppBar(
+            SmallTopAppBar(
                 title = title,
-                elevation = animateDpAsState(if (hasFocus) AppBarDefaults.TopAppBarElevation else 0.dp).value,
-                backgroundColor = MaterialTheme.colors.primarySurface.copy(alpha = focusedAlpha),
+                colors = TopAppBarDefaults.smallTopAppBarColors(
+                    containerColor = animateColorAsState(
+                        if (hasFocus) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant
+                    ).value
+                ),
                 actions = {
                     IconButton(onClick = onCloseRequest) { Icon(Icons.Default.Close, null) }
                     IconButton(onClick = { state.isMinimized = true }) { Icon(Icons.Default.Minimize, null) }
@@ -592,6 +522,6 @@ fun FrameWindowScope.WindowHeader(state: WindowState, title: @Composable () -> U
                 }
             )
         }
-        Divider(color = MaterialTheme.colors.onSurface)
+        Divider(color = MaterialTheme.colorScheme.onSurface)
     }
 }

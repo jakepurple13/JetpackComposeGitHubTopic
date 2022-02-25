@@ -1,3 +1,6 @@
+@file:OptIn(ExperimentalComposeLibrary::class)
+
+import org.jetbrains.compose.ExperimentalComposeLibrary
 import org.jetbrains.compose.compose
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -20,6 +23,8 @@ repositories {
 
 dependencies {
     implementation(compose.desktop.currentOs)
+    implementation(compose.materialIconsExtended)
+    implementation(compose.material3)
     implementation("org.jetbrains.compose.components:components-splitpane:1.0.1")
     implementation("com.github.tsohr:json:0.0.2")
     implementation("com.mikepenz:multiplatform-markdown-renderer-jvm:0.4.0")
@@ -42,7 +47,7 @@ compose.desktop {
         mainClass = "MainKt"
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "Github Topics"
+            packageName = "GitHub Topics"
             packageVersion = "1.0.0"
             modules("java.instrument", "java.prefs", "java.sql", "jdk.unsupported")
             macOS {

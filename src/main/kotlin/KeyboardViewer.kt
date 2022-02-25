@@ -1,15 +1,13 @@
 @file:OptIn(ExperimentalComposeUiApi::class, ExperimentalComposeUiApi::class)
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.VerticalScrollbar
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -26,6 +24,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import java.awt.event.KeyEvent
 import java.util.prefs.Preferences
+import androidx.compose.material3.MaterialTheme as M3MaterialTheme
 
 sealed class Shortcuts(val defaultKeys: List<Key>, private val visibleText: String) {
 
@@ -152,7 +151,7 @@ class ShortcutViewModel {
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun KeyboardView(onCloseRequest: () -> Unit) {
 
@@ -196,7 +195,7 @@ fun KeyboardView(onCloseRequest: () -> Unit) {
         resizable = false,
         alwaysOnTop = true,
     ) {
-        MaterialTheme(colors = if (darkTheme) darkColors(primary = MaterialBlue) else lightColors(primary = MaterialBlue)) {
+        M3MaterialTheme(colorScheme = if (darkTheme) darkColorScheme(primary = MaterialBlue) else lightColorScheme(primary = MaterialBlue)) {
             Surface(shape = RoundedCornerShape(8.dp)) {
                 Column(modifier = Modifier.padding(4.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -222,12 +221,12 @@ fun KeyboardView(onCloseRequest: () -> Unit) {
                                 CustomChip(
                                     it.toString(),
                                     textColor = animateColorAsState(
-                                        if (shortcutSelected == it) MaterialTheme.colors.onPrimary
-                                        else MaterialTheme.colors.onSurface
+                                        if (shortcutSelected == it) M3MaterialTheme.colorScheme.onPrimary
+                                        else M3MaterialTheme.colorScheme.onSurface
                                     ).value,
                                     backgroundColor = animateColorAsState(
                                         if (shortcutSelected == it) MaterialBlue
-                                        else MaterialTheme.colors.surface
+                                        else M3MaterialTheme.colorScheme.surface
                                     ).value,
                                     modifier = Modifier.cursorForSelectable()
                                 ) {
@@ -245,7 +244,15 @@ fun KeyboardView(onCloseRequest: () -> Unit) {
                             modifier = Modifier
                                 .align(Alignment.CenterEnd)
                                 .fillMaxHeight(),
-                            adapter = rememberScrollbarAdapter(shortcutScrollState)
+                            adapter = rememberScrollbarAdapter(shortcutScrollState),
+                            style = ScrollbarStyle(
+                                minimalHeight = 16.dp,
+                                thickness = 8.dp,
+                                shape = RoundedCornerShape(4.dp),
+                                hoverDurationMillis = 300,
+                                unhoverColor = M3MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                                hoverColor = M3MaterialTheme.colorScheme.onSurface.copy(alpha = 0.50f)
+                            )
                         )
                     }
                 }
@@ -283,7 +290,7 @@ fun KeyboardView(onCloseRequest: () -> Unit) {
             }
         }
 
-        MaterialTheme(colors = if (darkTheme) darkColors(primary = MaterialBlue) else lightColors(primary = MaterialBlue)) {
+        M3MaterialTheme(colorScheme = if (darkTheme) darkColorScheme(primary = MaterialBlue) else lightColorScheme(primary = MaterialBlue)) {
             Surface(shape = if (state.placement == WindowPlacement.Maximized) RectangleShape else RoundedCornerShape(8.dp)) {
                 Scaffold(topBar = { WindowHeader(state, { Text("Keyboard Configurations") }, onCloseRequest) }) { p ->
                     //Full weight is about 13.5 - 14
@@ -525,17 +532,17 @@ fun Numpad(modifier: Modifier = Modifier, onClick: (Key) -> Unit, pressedKeys: L
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun KeyView(key: Key, onClick: (Key) -> Unit, modifier: Modifier = Modifier, keysPressed: List<Key> = emptyList()) {
-    Card(
+    Surface(
+        onClick = { onClick(key) },
         modifier = Modifier
             .height(40.dp)
             .cursorForSelectable()
             .then(modifier),
         shape = RoundedCornerShape(4.dp),
-        onClick = { onClick(key) },
-        backgroundColor = animateColorAsState(if (key in keysPressed) MaterialTheme.colors.primary else MaterialTheme.colors.surface).value
+        color = animateColorAsState(if (key in keysPressed) M3MaterialTheme.colorScheme.primary else M3MaterialTheme.colorScheme.surface).value,
+        border = BorderStroke(1.dp, M3MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
     ) {
         Box {
             Text(

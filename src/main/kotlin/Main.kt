@@ -2,7 +2,6 @@
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.*
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -18,6 +17,15 @@ import androidx.compose.foundation.window.WindowDraggableArea
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.FabPosition
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -26,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.input.key.*
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -44,7 +53,7 @@ import java.time.ZoneId
 import java.util.*
 
 
-@OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 @Preview
 fun FrameWindowScope.App() {
@@ -54,7 +63,7 @@ fun FrameWindowScope.App() {
     val state = rememberLazyListState()
     val topicState = rememberLazyListState()
     val historyState = rememberLazyListState()
-    val scaffoldState = rememberScaffoldState()
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
 
     if (viewModel.isAskingToClose) {
         AlertDialog(
@@ -161,10 +170,10 @@ fun FrameWindowScope.App() {
         // History
         Menu("History", mnemonic = 'H') {
             Item(
-                "${if (scaffoldState.drawerState.isClosed) "Open" else "Close"} History",
+                "${if (drawerState.isClosed) "Open" else "Close"} History",
                 onClick = {
                     scope.launch {
-                        if (scaffoldState.drawerState.isClosed) scaffoldState.drawerState.open() else scaffoldState.drawerState.close()
+                        if (drawerState.isClosed) drawerState.open() else drawerState.close()
                     }
                 },
                 shortcut = Shortcuts.OpenCloseHistory.keyShortcut()
@@ -218,17 +227,22 @@ fun FrameWindowScope.App() {
         }
     }
 
-    Scaffold(
-        scaffoldState = scaffoldState,
+    val scrollBehavior = remember { TopAppBarDefaults.pinnedScrollBehavior() }
+
+    NavigationDrawer(
         drawerContent = {
+            val historyScrollBehavior = remember { TopAppBarDefaults.pinnedScrollBehavior() }
+
             Scaffold(
+                modifier = Modifier.nestedScroll(historyScrollBehavior.nestedScrollConnection),
                 topBar = {
-                    TopAppBar(
+                    SmallTopAppBar(
                         title = { Text("History") },
                         actions = {
                             Text("${viewModel.historyDBList.size}")
-                            IconButton(onClick = { scope.launch { scaffoldState.drawerState.close() } }) { Icon(Icons.Default.Close, null) }
-                        }
+                            IconButton(onClick = { scope.launch { drawerState.close() } }) { Icon(Icons.Default.Close, null) }
+                        },
+                        scrollBehavior = historyScrollBehavior
                     )
                 },
             ) {
@@ -256,7 +270,7 @@ fun FrameWindowScope.App() {
                                 topic,
                                 viewModel.historySelected == index,
                                 viewModel,
-                                MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium),
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = ContentAlpha.medium),
                                 modifier = Modifier
                                     .onPointerEvent(PointerEventType.Enter) { viewModel.historySelected = index }
                                     .onPointerEvent(PointerEventType.Exit) { viewModel.historySelected = -1 }
@@ -266,190 +280,208 @@ fun FrameWindowScope.App() {
                 }
             }
         },
-        topBar = {
-            TopAppBar(
-                title = { Text("Topics") },
-                navigationIcon = {
-                    CustomTooltip(tooltip = { Box(Modifier.padding(10.dp)) { Text("History (Cmd+Alt+Shift+H)") } }) {
-                        IconButton(onClick = {
-                            scope.launch {
-                                if (scaffoldState.drawerState.isClosed) scaffoldState.drawerState.open() else scaffoldState.drawerState.close()
-                            }
-                        }) { Icon(Icons.Default.Menu, null) }
-                    }
-                },
-                actions = {
-                    CustomTooltip(
-                        tooltip = { Box(Modifier.padding(10.dp)) { Text("Refresh (Cmd+R)") } },
-                    ) { IconButton(onClick = { scope.launch { viewModel.refresh(state) } }) { Icon(Icons.Default.Refresh, null) } }
+        drawerState = drawerState,
+    ) {
 
-                    Text("Page: ${viewModel.page}")
-
-                    CustomTooltip(
-                        tooltip = { Box(Modifier.padding(10.dp)) { Text("Previous Page (Cmd+Left)") } }
-                    ) { IconButton(onClick = { scope.launch { viewModel.previousPage(state) } }) { Icon(Icons.Default.KeyboardArrowLeft, null) } }
-                    CustomTooltip(
-                        tooltip = { Box(Modifier.padding(10.dp)) { Text("Next Page (Cmd+Right)") } }
-                    ) { IconButton(onClick = { scope.launch { viewModel.nextPage(state) } }) { Icon(Icons.Default.KeyboardArrowRight, null) } }
-
-                    Text("${viewModel.repoList.size}")
-                }
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { scope.launch { viewModel.scrollToTopRepo(state) } },
-                backgroundColor = MaterialTheme.colors.primary,
-            ) { Icon(Icons.Default.KeyboardArrowUp, null) }
-        },
-        floatingActionButtonPosition = FabPosition.End,
-        bottomBar = {
-            CustomBottomAppBar {
-                OutlinedTextField(
-                    value = viewModel.text,
-                    onValueChange = { viewModel.text = it },
-                    singleLine = true,
-                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                        focusedBorderColor = if (darkTheme) MaterialTheme.colors.primary.copy(alpha = ContentAlpha.high)
-                        else MaterialTheme.colors.onPrimary.copy(alpha = ContentAlpha.medium),
-                        focusedLabelColor = if (darkTheme) MaterialTheme.colors.primary.copy(alpha = ContentAlpha.high)
-                        else MaterialTheme.colors.onPrimary.copy(alpha = ContentAlpha.medium),
-                        trailingIconColor = if (darkTheme) MaterialTheme.colors.onSurface.copy(alpha = TextFieldDefaults.IconOpacity)
-                        else MaterialTheme.colors.onPrimary.copy(alpha = TextFieldDefaults.IconOpacity),
-                        placeholderColor = if (darkTheme) MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium)
-                        else MaterialTheme.colors.onPrimary.copy(alpha = ContentAlpha.medium)
-                    ),
-                    shape = MaterialTheme.shapes.medium,
-                    label = { Text("Add Topic") },
-                    placeholder = { Text("Press Enter to Add Topic") },
-                    trailingIcon = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            CustomTooltip(
-                                tooltip = { Box(Modifier.padding(10.dp)) { Text("Add to List (Enter)") } },
-                                backgroundColor = MaterialTheme.colors.primarySurface,
-                            ) { IconButton(onClick = { viewModel.onTopicAdd() }) { Icon(Icons.Default.Add, null) } }
-
-                            CustomTooltip(
-                                tooltip = { Box(Modifier.padding(10.dp)) { Text("Search (Cmd+S)") } },
-                                backgroundColor = MaterialTheme.colors.primarySurface,
-                            ) { IconButton(onClick = { scope.launch { viewModel.search(state, 1) } }) { Icon(Icons.Default.Search, null) } }
+        Scaffold(
+            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+            topBar = {
+                SmallTopAppBar(
+                    scrollBehavior = scrollBehavior,
+                    title = { Text("Topics") },
+                    navigationIcon = {
+                        CustomTooltip(tooltip = { Box(Modifier.padding(10.dp)) { Text("History (Cmd+Alt+Shift+H)") } }) {
+                            IconButton(onClick = {
+                                scope.launch {
+                                    if (drawerState.isClosed) drawerState.open() else drawerState.close()
+                                }
+                            }) { Icon(Icons.Default.Menu, null) }
                         }
                     },
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    keyboardActions = KeyboardActions(onNext = { viewModel.onTopicAdd() }),
-                    modifier = Modifier
-                        .padding(bottom = 6.dp)
-                        .fillMaxWidth()
-                        .onPreviewKeyEvent {
-                            val topic = Shortcuts.AddTopic
-                            when {
-                                // Add to search list
-                                it.key in topic.keys.filterOutModifiers() &&
-                                        it.isMetaPressed == topic.keys.anyMeta() &&
-                                        it.isShiftPressed == topic.keys.anyShift() &&
-                                        it.isAltPressed == topic.keys.anyAlt() &&
-                                        it.isCtrlPressed == topic.keys.anyCtrl() -> {
-                                    viewModel.onTopicAdd()
-                                    true
-                                }
-                                else -> false
-                            }
-                        }
-                )
-            }
-        },
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp)
-                .padding(it)
-        ) {
-            Box(modifier = Modifier.weight(5f)) {
-                if (viewModel.showSearching) {
-                    CircularProgressIndicator(
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .align(Alignment.Center),
-                        color = MaterialTheme.colors.primary
-                    )
-                } else {
-                    LazyColumn(
-                        modifier = Modifier
-                            .padding(end = 12.dp)
-                            .padding(vertical = 4.dp),
-                        state = state,
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        itemsIndexed(viewModel.repoList) { index, topic ->
-                            ContextMenuArea(
-                                items = {
-                                    listOf(
-                                        ContextMenuItem("Open") { viewModel.cardClick(topic) },
-                                        ContextMenuItem("Add to History") { viewModel.addTopicToHistory(topic) },
-                                        ContextMenuItem("Copy Url") {
-                                            Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(topic.url), null)
-                                        },
-                                        ContextMenuItem("Stars: ${topic.stars}") {},
-                                        ContextMenuItem("Watchers: ${topic.watchers}") {},
-                                    )
-                                }
-                            ) {
-                                TopicItem(
-                                    topic,
-                                    viewModel.repoSelected == index,
-                                    viewModel = viewModel,
-                                    modifier = Modifier
-                                        .onPointerEvent(PointerEventType.Enter) { viewModel.repoSelected = index }
-                                        .onPointerEvent(PointerEventType.Exit) { viewModel.repoSelected = -1 }
-                                ) { viewModel.cardClick(topic) }
-                            }
-                        }
+                    actions = {
+                        CustomTooltip(
+                            tooltip = { Box(Modifier.padding(10.dp)) { Text("Refresh (Cmd+R)") } },
+                        ) { IconButton(onClick = { scope.launch { viewModel.refresh(state) } }) { Icon(Icons.Default.Refresh, null) } }
+
+                        Text("Page: ${viewModel.page}")
+
+                        CustomTooltip(
+                            tooltip = { Box(Modifier.padding(10.dp)) { Text("Previous Page (Cmd+Left)") } }
+                        ) { IconButton(onClick = { scope.launch { viewModel.previousPage(state) } }) { Icon(Icons.Default.KeyboardArrowLeft, null) } }
+                        CustomTooltip(
+                            tooltip = { Box(Modifier.padding(10.dp)) { Text("Next Page (Cmd+Right)") } }
+                        ) { IconButton(onClick = { scope.launch { viewModel.nextPage(state) } }) { Icon(Icons.Default.KeyboardArrowRight, null) } }
+
+                        Text("${viewModel.repoList.size}")
                     }
+                )
+            },
+            floatingActionButton = {
+                SmallFloatingActionButton(
+                    onClick = { scope.launch { viewModel.scrollToTopRepo(state) } },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                ) { Icon(Icons.Default.KeyboardArrowUp, null) }
+            },
+            floatingActionButtonPosition = FabPosition.End,
+            bottomBar = {
+                CustomBottomAppBar {
+                    OutlinedTextField(
+                        value = viewModel.text,
+                        onValueChange = { viewModel.text = it },
+                        singleLine = true,
+                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                            focusedBorderColor = if (darkTheme) MaterialTheme.colorScheme.primary.copy(alpha = ContentAlpha.high)
+                            else MaterialTheme.colorScheme.onPrimary.copy(alpha = ContentAlpha.medium),
+                            focusedLabelColor = if (darkTheme) MaterialTheme.colorScheme.primary.copy(alpha = ContentAlpha.high)
+                            else MaterialTheme.colorScheme.onPrimary.copy(alpha = ContentAlpha.medium),
+                            trailingIconColor = if (darkTheme) MaterialTheme.colorScheme.onSurface.copy(alpha = TextFieldDefaults.IconOpacity)
+                            else MaterialTheme.colorScheme.onPrimary.copy(alpha = TextFieldDefaults.IconOpacity),
+                            placeholderColor = if (darkTheme) MaterialTheme.colorScheme.onSurface.copy(alpha = ContentAlpha.medium)
+                            else MaterialTheme.colorScheme.onPrimary.copy(alpha = ContentAlpha.medium),
+                            textColor = MaterialTheme.colorScheme.onSurface,
+                            cursorColor = MaterialTheme.colorScheme.primary,
+                        ),
+                        shape = RoundedCornerShape(4.dp),
+                        label = { Text("Add Topic") },
+                        placeholder = { Text("Press Enter to Add Topic") },
+                        trailingIcon = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                CustomTooltip(
+                                    tooltip = { Box(Modifier.padding(10.dp)) { Text("Add to List (Enter)") } },
+                                    backgroundColor = MaterialTheme.colorScheme.surface,
+                                ) { IconButton(onClick = { viewModel.onTopicAdd() }) { Icon(Icons.Default.Add, null) } }
 
-                    VerticalScrollbar(
-                        modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
-                        adapter = rememberScrollbarAdapter(scrollState = state)
-                    )
-                }
-            }
-
-            LazyColumn(
-                modifier = Modifier
-                    .weight(2f)
-                    .padding(4.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-                state = topicState,
-            ) {
-                stickyHeader {
-                    Text(
-                        "Topics to Search for:",
+                                CustomTooltip(
+                                    tooltip = { Box(Modifier.padding(10.dp)) { Text("Search (Cmd+S)") } },
+                                    backgroundColor = MaterialTheme.colorScheme.surface,
+                                ) { IconButton(onClick = { scope.launch { viewModel.search(state, 1) } }) { Icon(Icons.Default.Search, null) } }
+                            }
+                        },
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = { viewModel.onTopicAdd() }),
                         modifier = Modifier
-                            .background(MaterialTheme.colors.surface)
-                            .padding(4.dp)
+                            .padding(bottom = 6.dp)
                             .fillMaxWidth()
+                            .onPreviewKeyEvent {
+                                val topic = Shortcuts.AddTopic
+                                when {
+                                    // Add to search list
+                                    it.key in topic.keys.filterOutModifiers() &&
+                                            it.isMetaPressed == topic.keys.anyMeta() &&
+                                            it.isShiftPressed == topic.keys.anyShift() &&
+                                            it.isAltPressed == topic.keys.anyAlt() &&
+                                            it.isCtrlPressed == topic.keys.anyCtrl() -> {
+                                        viewModel.onTopicAdd()
+                                        true
+                                    }
+                                    else -> false
+                                }
+                            }
                     )
                 }
-                itemsIndexed(viewModel.topicsToSearch) { index, topic ->
-                    ContextMenuArea(items = { listOf(ContextMenuItem("Remove") { viewModel.removeTopic(topic) }) }) {
-                        Card(
-                            onClick = { viewModel.removeTopic(topic) },
-                            border = BorderStroke(
-                                width = animateDpAsState(if (viewModel.topicSelected == index) 4.dp else 0.dp).value,
-                                color = animateColorAsState(
-                                    if (viewModel.topicSelected == index) MaterialBlue
-                                    else MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium)
-                                ).value
-                            ),
+            },
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp)
+                    .padding(it)
+            ) {
+                Box(modifier = Modifier.weight(5f)) {
+                    if (viewModel.showSearching) {
+                        CircularProgressIndicator(
                             modifier = Modifier
-                                .onPointerEvent(PointerEventType.Enter) { viewModel.topicSelected = index }
-                                .onPointerEvent(PointerEventType.Exit) { viewModel.topicSelected = -1 }
-                                .cursorForSelectable()
+                                .padding(8.dp)
+                                .align(Alignment.Center),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier
+                                .padding(end = 12.dp)
+                                .padding(vertical = 4.dp),
+                            state = state,
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
-                            ListItem(
-                                text = { Text(topic) },
-                                icon = { Icon(Icons.Default.Clear, null) }
+                            itemsIndexed(viewModel.repoList) { index, topic ->
+                                ContextMenuArea(
+                                    items = {
+                                        listOf(
+                                            ContextMenuItem("Open") { viewModel.cardClick(topic) },
+                                            ContextMenuItem("Add to History") { viewModel.addTopicToHistory(topic) },
+                                            ContextMenuItem("Copy Url") {
+                                                Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(topic.url), null)
+                                            },
+                                            ContextMenuItem("Stars: ${topic.stars}") {},
+                                            ContextMenuItem("Watchers: ${topic.watchers}") {},
+                                        )
+                                    }
+                                ) {
+                                    TopicItem(
+                                        topic,
+                                        viewModel.repoSelected == index,
+                                        viewModel = viewModel,
+                                        modifier = Modifier
+                                            .onPointerEvent(PointerEventType.Enter) { viewModel.repoSelected = index }
+                                            .onPointerEvent(PointerEventType.Exit) { viewModel.repoSelected = -1 }
+                                    ) { viewModel.cardClick(topic) }
+                                }
+                            }
+                        }
+
+                        VerticalScrollbar(
+                            modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                            adapter = rememberScrollbarAdapter(scrollState = state),
+                            style = ScrollbarStyle(
+                                minimalHeight = 16.dp,
+                                thickness = 8.dp,
+                                shape = RoundedCornerShape(4.dp),
+                                hoverDurationMillis = 300,
+                                unhoverColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+                                hoverColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.50f)
                             )
+                        )
+                    }
+                }
+
+                LazyColumn(
+                    modifier = Modifier
+                        .weight(2f)
+                        .padding(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    state = topicState,
+                ) {
+                    stickyHeader {
+                        Text(
+                            "Topics to Search for:",
+                            modifier = Modifier
+                                .background(MaterialTheme.colorScheme.surface)
+                                .padding(4.dp)
+                                .fillMaxWidth()
+                        )
+                    }
+                    itemsIndexed(viewModel.topicsToSearch) { index, topic ->
+                        ContextMenuArea(items = { listOf(ContextMenuItem("Remove") { viewModel.removeTopic(topic) }) }) {
+                            Surface(
+                                onClick = { viewModel.removeTopic(topic) },
+                                border = BorderStroke(
+                                    width = animateDpAsState(if (viewModel.topicSelected == index) 4.dp else 0.dp).value,
+                                    color = animateColorAsState(
+                                        if (viewModel.topicSelected == index) MaterialBlue
+                                        else MaterialTheme.colorScheme.onSurface.copy(alpha = ContentAlpha.medium)
+                                    ).value
+                                ),
+                                modifier = Modifier
+                                    .onPointerEvent(PointerEventType.Enter) { viewModel.topicSelected = index }
+                                    .onPointerEvent(PointerEventType.Exit) { viewModel.topicSelected = -1 }
+                                    .cursorForSelectable(),
+                                shape = RoundedCornerShape(4.dp)
+                            ) {
+                                ListItem(
+                                    text = { Text(topic) },
+                                    icon = { Icon(Icons.Default.Clear, null) }
+                                )
+                            }
                         }
                     }
                 }
@@ -475,17 +507,18 @@ fun TopicItem(
     item: GitHubTopic,
     isSelected: Boolean,
     viewModel: TopicViewModel,
-    unselectedColor: Color = MaterialTheme.colors.onSurface.copy(alpha = ContentAlpha.medium),
+    unselectedColor: Color = MaterialTheme.colorScheme.onSurface.copy(alpha = ContentAlpha.medium),
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    Card(
+    Surface(
         onClick = onClick,
         border = BorderStroke(
             width = animateDpAsState(if (isSelected) 4.dp else 0.dp).value,
             color = animateColorAsState(if (isSelected) MaterialBlue else unselectedColor).value
         ),
-        modifier = modifier.cursorForSelectable()
+        modifier = modifier.cursorForSelectable(),
+        shape = RoundedCornerShape(4.dp)
     ) {
         Column(modifier = Modifier.padding(4.dp)) {
             ListItem(
@@ -518,12 +551,12 @@ fun TopicItem(
                         it,
                         modifier = Modifier.padding(2.dp),
                         textColor = animateColorAsState(
-                            if (viewModel.topicsToSearch.any { t -> t.equals(it, true) }) MaterialTheme.colors.onPrimary
-                            else MaterialTheme.colors.onSurface
+                            if (viewModel.topicsToSearch.any { t -> t.equals(it, true) }) MaterialTheme.colorScheme.onPrimary
+                            else MaterialTheme.colorScheme.onSurface
                         ).value,
                         backgroundColor = animateColorAsState(
                             if (viewModel.topicsToSearch.any { t -> t.equals(it, true) }) MaterialBlue
-                            else MaterialTheme.colors.surface
+                            else MaterialTheme.colorScheme.surface
                         ).value
                     ) { viewModel.toggleTopic(it) }
                 }
@@ -532,7 +565,7 @@ fun TopicItem(
             Row {
                 Text(
                     text = "Updated ${formatTimestamp(item.pushedAt)}",
-                    style = MaterialTheme.typography.caption,
+                    style = MaterialTheme.typography.bodySmall,
                     textAlign = TextAlign.Start,
                     modifier = Modifier
                         .padding(4.dp)
@@ -541,7 +574,7 @@ fun TopicItem(
 
                 Text(
                     text = item.language,
-                    style = MaterialTheme.typography.caption,
+                    style = MaterialTheme.typography.bodySmall,
                     textAlign = TextAlign.End,
                     modifier = Modifier
                         .padding(4.dp)
@@ -553,7 +586,7 @@ fun TopicItem(
 }
 
 var showIcon by mutableStateOf(false)
-var darkTheme by mutableStateOf(false)
+var darkTheme by mutableStateOf(true)
 
 @Composable
 fun InitialSetup() {
@@ -578,7 +611,7 @@ fun main() = application {
         undecorated = true,
         transparent = true
     ) {
-        MaterialTheme(colors = if (darkTheme) darkColors(primary = MaterialBlue) else lightColors(primary = MaterialBlue)) {
+        MaterialTheme(colorScheme = if (darkTheme) darkColorScheme(primary = MaterialBlue) else lightColorScheme(primary = MaterialBlue)) {
             Surface(shape = if (state.placement == WindowPlacement.Maximized) RectangleShape else RoundedCornerShape(8.dp)) {
                 Column {
                     WindowDraggableArea(
@@ -596,12 +629,14 @@ fun main() = application {
                         )
                     ) {
                         val hasFocus = LocalWindowInfo.current.isWindowFocused
-                        val focusedAlpha by animateFloatAsState(if (hasFocus) 1.0f else 0.5f)
 
-                        TopAppBar(
+                        SmallTopAppBar(
                             title = { Text("GitHub Topics") },
-                            elevation = animateDpAsState(if (hasFocus) AppBarDefaults.TopAppBarElevation else 0.dp).value,
-                            backgroundColor = MaterialTheme.colors.primarySurface.copy(alpha = focusedAlpha),
+                            colors = TopAppBarDefaults.smallTopAppBarColors(
+                                containerColor = animateColorAsState(
+                                    if (hasFocus) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant
+                                ).value
+                            ),
                             actions = {
                                 IconButton(onClick = { showKeyboard = true }) { Icon(Icons.Default.Settings, null) }
                                 IconButton(onClick = ::exitApplication) { Icon(Icons.Default.Close, null) }
@@ -618,7 +653,7 @@ fun main() = application {
                             }
                         )
                     }
-                    Divider(color = MaterialTheme.colors.onSurface)
+                    Divider(color = MaterialTheme.colorScheme.onSurface)
                     App()
                 }
             }
