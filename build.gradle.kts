@@ -44,7 +44,7 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Github Topics"
             packageVersion = "1.0.0"
-
+            modules("java.sql")
             macOS {
 
             }

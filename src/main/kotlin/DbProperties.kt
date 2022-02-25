@@ -12,6 +12,7 @@ import java.io.File
 import java.sql.Connection
 
 fun dbInit() {
+    println("Creating database...")
     transaction(DbProperties.db) { SchemaUtils.create(Topic) }
 }
 
