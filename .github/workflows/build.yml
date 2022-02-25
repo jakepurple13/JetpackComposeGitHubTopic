@@ -37,7 +37,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: upload file
-          path: JetpackComposeGitHubTopic/build/compose/binaries/main/dmg/GitHub Topics-1.0.0.dmg
+          path: /home/runner/work/JetpackComposeGitHubTopic/JetpackComposeGitHubTopic/build/compose/binaries/main/dmg/GitHub Topics-1.0.0.dmg
         
   windows:
     # The type of runner that the job will run on
@@ -61,7 +61,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: upload file
-          path: JetpackComposeGitHubTopic\build\compose\binaries\main\msi\GitHub Topics-1.0.0.msi
+          path: /home/runner/work/JetpackComposeGitHubTopic/JetpackComposeGitHubTopic\build\compose\binaries\main\msi\GitHub Topics-1.0.0.msi
 
   linux:
     # The type of runner that the job will run on
@@ -85,4 +85,4 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: upload file
-          path: JetpackComposeGitHubTopic/build/compose/binaries/main/deb/github-topics_1.0.0-1_amd64.deb
+          path: /home/runner/work/JetpackComposeGitHubTopic/JetpackComposeGitHubTopic/build/compose/binaries/main/deb/github-topics_1.0.0-1_amd64.deb
