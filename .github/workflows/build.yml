@@ -61,7 +61,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: Windows
-          path: \a\home\runner\work\JetpackComposeGitHubTopic\JetpackComposeGitHubTopic\build\compose\binaries\main\msi\GitHub Topics-1.0.0.msi
+          path: D:\a\JetpackComposeGitHubTopic\JetpackComposeGitHubTopic\build\compose\binaries\main\msi\GitHub Topics-1.0.0.msi
 
   linux:
     # The type of runner that the job will run on
