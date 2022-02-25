@@ -50,8 +50,15 @@ compose.desktop {
             packageName = "GitHub Topics"
             packageVersion = "1.0.0"
             modules("java.instrument", "java.prefs", "java.sql", "jdk.unsupported")
+            appResourcesRootDir.set(project.layout.projectDirectory.dir("src/main/resources"))
             macOS {
-
+                iconFile.set(project.file("src/main/resources/logo.icns"))
+            }
+            windows {
+                iconFile.set(project.file("src/main/resources/logo.ico"))
+            }
+            linux {
+                iconFile.set(project.file("src/main/resources/logo.png"))
             }
         }
     }
