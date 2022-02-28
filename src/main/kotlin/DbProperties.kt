@@ -3,17 +3,15 @@ import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SizedIterable
 import org.jetbrains.exposed.sql.javatime.timestamp
 import org.jetbrains.exposed.sql.transactions.TransactionManager
-import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
 import java.sql.Connection
 
 fun dbInit() {
     println("Creating database...")
-    transaction(DbProperties.db) { SchemaUtils.create(Topic) }
+    //transaction(DbProperties.db) { SchemaUtils.create(Topic) }
 }
 
 val FILE_SEPERATOR = File.separator

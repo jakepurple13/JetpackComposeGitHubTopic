@@ -7,11 +7,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.sql.Transaction
 import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.statements.StatementInterceptor
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.awt.Desktop
 import java.net.URI
-import java.time.Instant
 
 class TopicViewModel {
 
@@ -125,16 +123,16 @@ class TopicViewModel {
     }
 
     private fun Transaction.updateHistory() {
-        registerInterceptor(object : StatementInterceptor {
+        /*registerInterceptor(object : StatementInterceptor {
             override fun afterCommit() {
                 transaction(DbProperties.db) { historyDBList = TopicDao.all().mapToGitHubTopic() }
             }
-        })
+        })*/
     }
 
     fun addTopicToHistory(item: GitHubTopic) {
         if (item !in historyDBList) {
-            transaction(DbProperties.db) {
+            /*transaction(DbProperties.db) {
                 updateHistory()
                 TopicDao.new {
                     name = item.name
@@ -150,7 +148,7 @@ class TopicViewModel {
                     stars = item.stars
                     language = item.language
                 }
-            }
+            }*/
         }
     }
 
@@ -281,7 +279,7 @@ class TopicViewModel {
     }
 
     init {
-        transaction(DbProperties.db) { historyDBList = TopicDao.all().mapToGitHubTopic() }
+        //transaction(DbProperties.db) { historyDBList = TopicDao.all().mapToGitHubTopic() }
     }
 
 }

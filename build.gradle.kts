@@ -25,7 +25,7 @@ dependencies {
     implementation(compose.desktop.currentOs)
     implementation(compose.materialIconsExtended)
     implementation(compose.material3)
-    implementation("org.jetbrains.compose.components:components-splitpane:1.0.1")
+    implementation(compose.desktop.components.splitPane)
     implementation("com.github.tsohr:json:0.0.2")
     implementation("com.mikepenz:multiplatform-markdown-renderer-jvm:0.4.0")
     implementation("org.ocpsoft.prettytime:prettytime:5.0.2.Final")
