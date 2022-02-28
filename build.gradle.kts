@@ -56,6 +56,8 @@ compose.desktop {
             }
             windows {
                 iconFile.set(project.file("src/main/resources/logo.ico"))
+                dirChooser = true
+                console = true
             }
             linux {
                 iconFile.set(project.file("src/main/resources/logo.png"))
